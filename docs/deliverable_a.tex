@@ -1,0 +1,112 @@
+%Document Styles and Necessary Packages
+\documentclass[12pt]{article}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{listings}
+\usepackage{xcolor} % for setting colors
+\usepackage{color,soul}
+\usepackage{enumitem}
+
+%Set Margins and Page Style here
+\usepackage{geometry}
+\geometry{
+	top = 1.1in,
+	bottom = 1.35in,
+	left = 0.875in,
+	right = 0.875in,
+}
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{35pt} 
+
+%Set the default code style
+\lstset{
+    frame=tb, % draw a frame at the top and bottom of the code block
+    tabsize=4, % tab space width
+    showstringspaces=false, % don't mark spaces in strings
+    numbers=left, % display line numbers on the left
+    commentstyle=\color{purple}, % comment color
+    keywordstyle=\color{blue}, % keyword color
+    stringstyle=\color{red}, % string color
+    breaklines=true,
+    postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\color{red}\hookrightarrow\space}}
+}
+\renewcommand{\lstlistingname}{File}
+
+%Header
+\lhead{CS 176B \\ Winter 2018}
+\chead{\large{\textbf{Project Deliverable \#A}} \\ \textit{Network Computing}}
+\rhead{Ben Patient \\ Danish Vaid \\ Jake Can}
+
+%Footer
+\rfoot{Page \thepage \  of \pageref{LastPage}}
+\lfoot{Copyright \textcopyright \ 2018 \\ \textsl{Created Using \LaTeX}}
+
+%Header and Footer Lines  Thickness
+\renewcommand{\headrulewidth}{2.5pt}
+\newcommand\tab[1][0.85cm]{\hspace*{#1}}
+
+%Document
+\begin{document}
+
+
+\begin{flushleft}
+	\large{\underline{\textbf{Title:}}}
+\end{flushleft}
+
+	\indent FTPxpress
+
+\begin{flushleft}
+	\large{\underline{\textbf{Team Members:}}}
+\end{flushleft}
+	\vspace{-7.5px}
+
+	\begin{itemize}[noitemsep,nolistsep] 
+		\item [-] Ben Patient
+		\item [-] Danish Vaid
+		\item [-] Jake Can
+	\end{itemize}
+	
+	\begin{itemize}[leftmargin=5.2cm]
+		\item[Team Size Justification:]  Having been in the same capstone team for CS 189A/B the three of us established a good workflow and our similar schedules let us coordinate and work well together. We hope to use these advantages to build a solid project and have many ideas for features we could implement and networking challenges for us to overcome. 
+	\end{itemize}
+
+
+\begin{flushleft}
+	\large{\underline{\textbf{Project Description:}}}
+\end{flushleft}
+	\vspace{-7.5px}
+
+	For our project, we would like to create our own version of a FTP server, client, and protocol. In doing this we would also be implementing custom headers to tailor the protocol to our priorities and for features we want to implement. These headers would include information on file name, file type, packet ordering, payload size, etc. Upon the basics of FTP, we also plan to add network security features (for user privacy and ensuring data integrity) and support for parallelized multi-file upload/download for performance. We hope for our server program to server multiple clients, this feature would have us identify specific users to differentiate who is sending what packet to ensure there are no errors. 
+
+\begin{flushleft}
+	\large{\underline{\textbf{Deliverables:}}}
+\end{flushleft}
+	\vspace{-7.5px}
+	
+	At minimum we want to deliver a basic FTP protocol with our custom headers and a minimal terminal UI for usage. Having finished the features discussed about, we would like to support basic commands such as list files, delete file, move file, and such. Finally, our physical deliverable will be our source code, and a report that describes the project, its completion and usage, and performance analysis.
+
+\begin{flushleft}
+	\large{\underline{\textbf{Timeline:}}}
+\end{flushleft}
+	\vspace{-7.5px}
+	
+	\begin{itemize}[leftmargin=2.5cm,noitemsep,nolistsep]
+		\item[Week 3:] Design our headers and protocol schematics
+		\item[Week 4:] Successfully send over a file from 1 user to another
+		\item[Week 5:] Implement basic terminal UI and command support
+		\item[Week 6:] Implement parallelized upload/download
+		\item[Week 7:] Implement network security
+		\item[Week 8:] Run performance testing methods
+		\item[Week 9:] Refine code and finalize project/report.	
+	\end{itemize}
+
+	
+			
+	
+%End of Document
+\end{document}
