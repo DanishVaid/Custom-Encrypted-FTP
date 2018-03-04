@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3
+import json
 
 from shared import connection
 from time import sleep
@@ -6,9 +6,7 @@ from client_pkg import command
 
 class Client(object):
 
-	def __init__(self, config_file):
-		self.config_file = config_file
-
+	def __init__(self):
 		self.client_IP = None
 		self.client_port = None
 
@@ -18,8 +16,8 @@ class Client(object):
 		self.incoming_stream = None
 		self.outgoing_socket = None
 
-	def run(self):
-		self.configure()
+	def run(self, config):
+		self.configure(config)
 
 		self.make_connection()
 
@@ -38,21 +36,22 @@ class Client(object):
 	def close_connection(self):
 		connection.close_socket(self.outgoing_socket)
 
-	def configure(self):
-		file = open(self.config_file, 'r')
-		lines = file.readlines()
+	def configure(self, config):
+		self.client_IP = config['client_ip']
+		self.client_port = config['client_port']
+		self.server_IP = config['server_ip']
+		self.server_port = config['server_port']
 
-		self.server_IP = lines[0].split("=")[1]
-		self.server_port = lines[1].split("=")[1]
-		self.client_IP = lines[2].split("=")[1]
-		self.client_port = lines[3].split("=")[1]
-
-		file.close()
 
 def init(config_file):
-	print("Client opened.")
+	if config_file is None:
+		config_file = 'config.json'
+	with open(config_file, 'r') as c_file:
+		config = json.load(c_file)
+
+	print("Client starting . . .")
 
 	client = Client()
-	client.run()
+	client.run(config)
 
 	print("Client closed.")

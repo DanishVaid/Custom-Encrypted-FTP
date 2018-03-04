@@ -77,3 +77,4 @@ web/migrations/*
 
 # Added Files
 .texpadtmp/*
+*.conf.json

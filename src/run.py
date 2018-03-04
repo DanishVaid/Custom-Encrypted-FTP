@@ -2,6 +2,7 @@
 
 import sys
 import argparse
+import os
 
 import server_pkg.server as server
 import client_pkg.client as client
@@ -9,7 +10,7 @@ import client_pkg.client as client
 def valid_option(args):
     if args.client is False and args.server is False:
         return False
-    elif args.client is True and args.client is True:
+    elif args.client is True and args.server is True:
         return False
     return True
 
@@ -20,15 +21,23 @@ def main():
     parser.add_argument('-f', "--file", help='Config file to use.', default=None)
     args = parser.parse_args()
 
-    if valid_option(args):
-        if args.client:
-            client.init(args.file)
-        else:
-            server.init(args.file)
-    else:
+
+    if not valid_option(args):
         print("Invalid run option.")
         parser.print_help()
         sys.exit(0)
+
+    if args.file is None:
+        print("No config file specified, using default configuration.")
+    elif os.path.isfile(args.file):
+        print("ERROR: Config file not found.") 
+        sys.exit(0)
+
+    if args.client:
+        client.init(args.file)
+    else:
+        server.init(args.file)
+        
 
 
 if __name__ == "__main__":
