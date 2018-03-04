@@ -2,6 +2,7 @@
 
 import sys
 import argparse
+
 import server_pkg.server as server
 import client_pkg.client as client
 
@@ -25,7 +26,7 @@ def main():
         else:
             server.init(args.file)
     else:
-        print("Invalid run option,")
+        print("Invalid run option.")
         parser.print_help()
         sys.exit(0)
 
