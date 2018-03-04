@@ -69,11 +69,17 @@
 \author{Ben Patient \\ Danish Vaid \\ Jake Can}
 \date{March 4, 2018}
 
-%Document
+% Document
 \begin{document}
 \maketitle
 \newpage
 
+% TODO: Abstract
+\titleline{Abstract}
+	\vspace{5pt}
+	\indent \hl{Stubbed out, still have to do this.} \\
+
+% Team Members
 \titleline{Team Members:}
 
 	\vspace{2.5pt}
@@ -88,24 +94,36 @@
 	\end{itemize}
 
 \vspace{-10pt}
+
+% TODO: Introduction
+\titleline{Introduction}
+	\vspace{5pt}
+	\indent \hl{Stubbed out, still have to do this. Ideas: What is vanilla FTP, how does it work.} \\
+
+% TODO: Purpose
+\titleline{Purpose}
+	\vspace{5pt}
+	\indent \hl{Stubbed out, still have to do this. Ideas: Why are we working on this? What do we want to learn?} \\
+
+% TODO: Project Overview
 \titleline{Project Overview}
 
 	\vspace{5pt}
 	For our project, we are implementing our own version of a FTP server, client, and protocol. In doing this we are also implementing custom headers to tailor the protocol to our priorities and for the features we want to implement. These headers would include information on file, packet ordering, payload size, etc. Looking more into these headers, we decided that it would be better to have a custom handshake that exchanged meta-data, file priority, and other such data explained below. Upon the basics of FTP, we also plan to add network security features (for user privacy and ensuring data integrity) and support for parallelized multi-file upload/download for performance. We hope for our server program to server multiple clients, this feature would have us identify specific users to differentiate who is sending what packet to ensure there are no errors. \\
 	
-
+% TODO: Project Goal Summary
 \titleline{Project Goal Summary}
 	
 	\vspace{5pt}
 	At minimum we want to deliver a basic FTP protocol with our custom headers and a minimal terminal UI for usage. Having finished the features discussed above, we would like to support basic commands such as list files, delete file, move file, and such. Finally, our physical deliverable will be our source code, and a report that describes the project, its completion and usage, and performance analysis. \\
-	
 
+% TODO: Custom File Handshake
 \titleline{Custom File Handshake}
 
 	\vspace{5pt}
 	\indent This process will set metadata for each file transfer. The benefit of including a handshake is to reduce the number of headers, therefore reducing overhead on each packet sent so there is more data per packet. Our metadata would include file name, file type, FUID (file unique identifier), client ID, and security keys. The client ID field will pair the file with the client. Knowing this ensures which file is being transferred by who, and can also be used to prevent collisions of file names. Lastly, the security key sent over will be used for asymmetric encryption, to make sure the connection is confidential.
 	
-
+% TODO: Custom Headers
 \titleline{Custom Headers}
 \vspace{5pt}
 \textit{Note: Many of our custom headers became a part of the custom handshake to improve performance and efficiency.} \\
@@ -120,10 +138,12 @@
 	\noindent\large{\textbf{Packet Type}} \\
 	\indent This is will be 1 bit information that tells whether the packet contains command data or file data. \hl{Finish explaining.} \\
 	
-
+% TODO: Performance Analysis
 \titleline{Performance Analysis}
+\vspace{5pt}
 	\indent \hl{Stubbed out, still have to do this. Ideas: encrypted vs unencrypted, serialized vs parallelized file transfer, performance compares to popular options (i.e. filezilla, cyberduck, etc.), load testing.} \\
 
+% TODO: Timeline
 \titleline{Timeline}
 	\begin{itemize}[leftmargin=2.5cm,noitemsep,nolistsep]
 		\item[Week 3:] Design our headers and protocol schematics
@@ -138,7 +158,15 @@
 	~\\
 	We have fallen behind on our timeline slightly and are current in the week 6 phase of implementing parallel transfer. We spent the past week focused on other commitments, since those have ended we should have more time to catch up in the following weeks.
 
+% TODO: Conclusion
+\titleline{Conclusion}
+\vspace{5pt}
+	\indent \hl{Stubbed out, still have to do this.} \\
 	
+% TODO: Comments
+\titleline{Conclusion}
+\vspace{5pt}
+	\indent \hl{Stubbed out, still have to do this.} \\
 			
 	
 %End of Document
