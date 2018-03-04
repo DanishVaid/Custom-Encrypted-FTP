@@ -1,4 +1,4 @@
-import preferences
+from client_pkg import preferences
 
 class Command(object):
 
@@ -10,7 +10,7 @@ class Command(object):
 	def take_command(self):
 		in_session = True
 		while in_session:
-			list_commands()
+			self.list_commands()
 
 			console_input = input("Command (enter 'exit' to quit):")
 			console_input = console_input.split()
@@ -50,7 +50,7 @@ class Command(object):
 			self.server_socket.sendall((command).encode())
 
 
-	def list_commands():
+	def list_commands(self):
 		print("Commands")
 		print("--------")
 

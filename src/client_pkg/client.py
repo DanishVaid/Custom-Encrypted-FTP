@@ -1,8 +1,8 @@
 #!/usr/local/bin/python3
 
-import connection
+from shared import connection
 from time import sleep
-import command
+from client_pkg import command
 
 class Client(object):
 
@@ -13,8 +13,8 @@ class Client(object):
 	def run(self):
 		self.make_connection()
 
-		user_command = command.Command()
-		user_command.take_command(self.outgoing_socket)
+		user_command = command.Command(self.outgoing_socket)
+		user_command.take_command()
 
 		self.close_connection()
 
@@ -32,14 +32,10 @@ class Client(object):
 	def close_connection(self):
 		connection.close_socket(self.outgoing_socket)
 
-def main():
+def init(config_file):
 	print("Client opened.")
 
 	client = Client()
 	client.run()
 
 	print("Client closed.")
-
-
-if __name__ == "__main__":
-	main()

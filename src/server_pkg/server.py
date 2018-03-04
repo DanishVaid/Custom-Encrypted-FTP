@@ -1,7 +1,7 @@
 #!/usr/local/bin/python3
 
-import message
-import connection
+from server_pkg import message
+from shared import connection
 from time import sleep
 
 class Server(object):
@@ -31,13 +31,10 @@ class Server(object):
 	def close_connection(self):
 		connection.close_socket(self.outgoing_socket)
 
-def main():
+def init(config_file):
 	print("Server opened.")
 
 	server = Server()
 	server.run()
 
 	print("Server closed.")
-
-if __name__ == "__main__":
-	main()
