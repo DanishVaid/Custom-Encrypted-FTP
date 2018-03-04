@@ -11,7 +11,7 @@ def receive_message(incoming_stream):
 		incoming_stream.settimeout(1)
 
 		try:
-			data = incoming_stream.recv(1024).decode()
+			data = incoming_stream.recv(4096).decode()
 
 			if len(data) > 0:
 				if data == "exit":

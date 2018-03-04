@@ -10,11 +10,12 @@ class Client(object):
 		self.incoming_stream = None
 		self.outgoing_socket = None
 
-		file_directory = None
-
 	def run(self):
 		self.make_connection()
-		command.take_command(self.outgoing_socket)
+
+		user_command = command.Command()
+		user_command.take_command(self.outgoing_socket)
+
 		self.close_connection()
 
 	def make_connection(self):
@@ -31,17 +32,14 @@ class Client(object):
 	def close_connection(self):
 		connection.close_socket(self.outgoing_socket)
 
-def run():
-	print("Running Client")
+def main():
+	print("Client opened.")
 
 	client = Client()
 	client.run()
 
-	# Step 1: Make connection
-
-
-	# Step 2: Take commands
+	print("Client closed.")
 
 
 if __name__ == "__main__":
-	run()
+	main()

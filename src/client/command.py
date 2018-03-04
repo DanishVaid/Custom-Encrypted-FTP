@@ -1,31 +1,63 @@
-def take_command(server_socket):
-	in_session = True
-	while in_session:
-		list_commands()
+import preferences
 
-		console_input = input("Command (enter 'exit' to quit):")
-		console_input = console_input.split()
+class Command(object):
 
-		if len(console_input) == 0:
-			print("No input detected.")
-			continue
+	def __init__(self, server_socket):
+		self.server_socket = server_socket
 
-		command = console_input[0]
+		self.file_directory = None # Default to cwd
 
-		args = []
-		if len(console_input) > 1:
-			args = console_input[1:]
+	def take_command(self):
+		in_session = True
+		while in_session:
+			list_commands()
 
-		if command == "exit":
-			in_session = False
+			console_input = input("Command (enter 'exit' to quit):")
+			console_input = console_input.split()
 
-		server_socket.sendall((command).encode())
+			if len(console_input) == 0:
+				print("No input detected.")
+				continue
+
+			command = console_input[0]
+
+			args = []
+			if len(console_input) > 1:
+				args = console_input[1:]
+
+			if command == "exit":
+				in_session = False
+
+			elif command == "pref":
+				user_preferences = preferences.Preferences()
+				user_preferences.set_preferences()
+
+			elif command == "ls":
+				pass
+
+			elif command == "cd":
+				pass
+
+			elif command == "upload":
+				pass
+
+			elif command == "download":
+				pass
+
+			else:
+				print("Command not recognized.")
+
+			self.server_socket.sendall((command).encode())
 
 
-def list_commands():
-	print("List of commands:")
+	def list_commands():
+		print("Commands")
+		print("--------")
 
-	print("List Current Directory: ls")
-	print("Change Directory: cd <directory name>")
-	print("Upload File: upload <filename>")
-	print("Download File: download <filename>")
+		print("Set Preferences: pref")
+
+		print("List Current Directory: ls")
+		print("Change Directory: cd <directory name>")
+
+		print("Upload File: upload <filename>")
+		print("Download File: download <filename>")

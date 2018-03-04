@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3
 
-import process_message
+import message
 import connection
 from time import sleep
 
@@ -14,7 +14,7 @@ class Server(object):
 
 	def run(self):
 		self.make_connection()
-		process_message.receive_message(self.incoming_stream)
+		message.receive_message(self.incoming_stream)
 		self.close_connection()
 
 	def make_connection(self):
@@ -32,10 +32,12 @@ class Server(object):
 		connection.close_socket(self.outgoing_socket)
 
 def main():
-	print("Running Server")
+	print("Server opened.")
 
 	server = Server()
 	server.run()
+
+	print("Server closed.")
 
 if __name__ == "__main__":
 	main()
