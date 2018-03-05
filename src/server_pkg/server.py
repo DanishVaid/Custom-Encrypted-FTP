@@ -33,7 +33,7 @@ class Server(object):
 
 def init(config_file):
 	if config_file is None:
-		config_file = 'config.json'
+		config_file = 'server_pkg/config.json'
 	with open(config_file, 'r') as c_file:
 		config = json.load(c_file)
 		

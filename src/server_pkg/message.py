@@ -1,4 +1,5 @@
 import socket
+from shared import files
 
 def process_command(message):
 	pass
@@ -11,13 +12,17 @@ def receive_message(incoming_stream):
 		incoming_stream.settimeout(1)
 
 		try:
-			data = incoming_stream.recv(4096).decode()
+			data = incoming_stream.recv(4096)
 
 			if len(data) > 0:
 				if data == "exit":
 					in_session = False
 
 				print("Message is:", data)
+
+				file = files.Files("server_pkg/test_received.txt", 4096)
+				file.write_file_by_append(data)
+
 				# Replace with process_command(data)
 
 				# if data[-1] == "%":

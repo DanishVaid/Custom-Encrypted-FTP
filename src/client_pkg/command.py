@@ -1,4 +1,5 @@
 from client_pkg import preferences
+from shared import files
 
 class Command(object):
 
@@ -39,7 +40,20 @@ class Command(object):
 				pass
 
 			elif command == "upload":
-				pass
+				packet_size = 4096
+				file = files.Files("client_pkg/test.txt", packet_size)
+
+				seek_point = 0
+				while True:
+					data = file.read_file(seek_point)
+
+					if len(data) == 0:
+						break
+
+					self.server_socket.sendall(data)
+					seek_point = seek_point + packet_size
+
+				print("[DEBUG] Done sending.")
 
 			elif command == "download":
 				pass

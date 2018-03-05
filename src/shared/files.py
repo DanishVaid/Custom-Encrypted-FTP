@@ -18,5 +18,5 @@ class Files(object):
 		pass
 
 	def write_file_by_append(self, data):
-		with open(self.filename, 'a') as file:
+		with open(self.filename, 'ab') as file:
 			file.write(data)
