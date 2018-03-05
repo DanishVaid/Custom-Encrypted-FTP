@@ -13,4 +13,4 @@ Currently the execution of our program is fairly simple, within 5 seconds you mu
 2. `./run -c`
 
 Once the server and client have connected, you can upload the test file by typing `upload` client's console.
-The program so far tests with reading is "test.txt" and after transfering write out "received_test.txt" on the server side. We are working on building out the logic for the commands and did not want to include broken code in our submission.
+The program so far tests with reading in "test.txt" and transferring to the server, where the server then writes out "received_test.txt" on the server side. We are working on building out the logic for the commands and did not want to include broken code in our submission.
