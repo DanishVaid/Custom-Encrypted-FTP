@@ -1,5 +1,6 @@
 from client_pkg import preferences
 from shared import files
+from shared.packets import Command_Packet
 
 class Command(object):
 
@@ -13,16 +14,17 @@ class Command(object):
 		while in_session:
 			self.list_commands()
 
-			console_input = input("Command (enter 'exit' to quit):")
+			console_input = input("Command (enter 'exit' to quit): ")
 			console_input = console_input.split()
 
 			if len(console_input) == 0:
 				print("No input detected.")
 				continue
-
 			command = console_input[0]
-
 			args = []
+
+			built_pack = None
+
 			if len(console_input) > 1:
 				args = console_input[1:]
 
@@ -34,7 +36,7 @@ class Command(object):
 				user_preferences.set_preferences()
 
 			elif command == "ls":
-				pass
+				built_pack = Command_Packet('ls')
 
 			elif command == "cd":
 				pass
@@ -61,7 +63,7 @@ class Command(object):
 			else:
 				print("Command not recognized.")
 
-			self.server_socket.sendall((command).encode())
+			self.server_socket.sendall(built_pack.serialize())
 
 
 	def list_commands(self):

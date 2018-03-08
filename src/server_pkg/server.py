@@ -10,7 +10,7 @@ class Server(object):
 		self.incoming_stream = None
 		self.outgoing_socket = None
 
-		file_directory = None
+		self.file_directory = None
 
 	def run(self, config):
 		self.make_connection(config)
