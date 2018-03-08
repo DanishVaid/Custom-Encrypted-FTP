@@ -6,6 +6,8 @@ class Files(object):
 		self.filename = filename
 		self.packet_size = packet_size
 
+		self.seek_point = 0
+
 	def read_file(self, seek_point):
 		data = ""
 		with open(self.filename, 'rb+') as file:
