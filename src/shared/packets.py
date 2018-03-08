@@ -6,7 +6,7 @@ import json
 #   - Meta = m
 #   - Data = d
 #################
-class Command_Packet(object):
+class CommandPacket(object):
     _type = 'c'
     data = None
 
@@ -21,29 +21,29 @@ class Command_Packet(object):
         return json.dumps(res).encode()
 
 
-class Meta_Packet(object):
+class MetaPacket(object):
     _type = 'm'
     _overhead = 9999    # Modify to figure out overhead
 
 
-class Data_Packet(object):  
+class DataPacket(object):  
     _type = 'd' 
     _overhead = 9999    # Modify to figure out overhead 
 
 
-def deserialize_packet(inp_pack):
-    decoded_pack = inp_pack.decode()
-    attr_dict = json.loads(decoded_pack)
-    ret_pack = None
-    this_type = attr_dict['type'] 
-    if this_type == 'c':
-        ret_pack = Command_Packet(attr_dict['data'])
-    elif this_type == 'm':
+def deserialize_packet(input_packet):
+    attributes = json.loads(input_packet.decode())
+
+    output = None
+    packet_type = attributes['type'] 
+    if packet_type == 'c':
+        output = CommandPacket(attributes['data'])
+    elif packet_type == 'm':
         pass
-    elif this_type == 'd':
+    elif packet_type == 'd':
         pass
     else:
-        print("Packet type ({}) not recoginzed.".format(attr_dict['type']))
+        print("Packet type ({}) not recoginzed.".format(attributes['type']))
 
-    return ret_pack
+    return output
     
