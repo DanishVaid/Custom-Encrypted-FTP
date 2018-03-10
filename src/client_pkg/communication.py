@@ -10,25 +10,33 @@ class Communication(object):
 		self.outgoing_socket = outgoing_socket
 
 		self.directory = directory.Directory("client")
+		self.in_session = True
 
 	def take_command(self):
-		in_session = True
-		while in_session:
-			self.list_commands()	# TODO: Update list of commands, and format
+		commands = {
+			"exit": exit,
+			"lls": lls,
+			"lcd": lcd,
+			"lpwd": lpwd,
+			"ls": ls,
+			"cd": cd,
+			"pwd": pwd,
+			"upload": upload,
+			"download": download
+		}
 
-			console_input = input("Command (enter 'exit' to quit): ")
-			console_input = console_input.split()
+		zero_arg_commands = ["exit", "lls", "lpwd", "ls", "pwd"]
+		one_arg_commands = ["lcd", "cd", "upload", "download"]
 
-			if len(console_input) == 0:
-				print("No input detected.")
-				continue
-			command = console_input[0]
-			args = []
+		while self.in_session:
+			command, args = self.take_input()
 
-			if len(console_input) > 1:
-				args = console_input[1:]
-
-			packet = ""
+			if command in zero_arg_commands:
+				commands[command]()
+			elif command in one_arg_commands:
+				commands[command](args[0])
+			else:
+				print("Command not recognized.")
 
 			if command == "exit":
 				in_session = False
@@ -57,6 +65,66 @@ class Communication(object):
 
 			self.receive_messages()
 
+	def take_input(self):
+		self.list_commands()
+
+		console_input = input("Command (enter 'exit' to quit):")
+		console_input = console_input.split()
+
+		if len(console_input) == 0:
+			print("No input detected.")
+			return
+
+		command = console_input[0]
+		args = []
+
+		if len(console_input) > 1:
+			args = console_input[1:]
+
+		return command, args
+
+	def list_commands(self):
+		print("Commands")
+		print("--------")
+
+		print("List Local Current Directory: lls")
+		print("Change Local Directory: lcd <directory name>")
+		print("Print Local Working Directory: lpwd")
+
+		print("List Remote Current Directory: ls")
+		print("Change Remote Directory: cd <directory name>")
+		print("Print Remote Working Directory: pwd")
+
+		print("Upload File: upload <filename>")
+		print("Download File: download <filename>")
+
+	def exit(self):
+		pass
+
+	def lls(self):
+		pass
+
+	def lcd(self, directory):
+		pass
+
+	def lpwd(self):
+		pass
+
+	def ls(self):
+		pass
+
+	def cd(self, directory):
+		pass
+
+	def pwd(self):
+		pass
+
+	def upload(self, filename):
+		pass
+
+	def download(self, filename):
+		pass
+
 	def receive_messages(self):
 		# TODO: Add blocking/timeout
 		# TODO: Do function, can take structure from server code
@@ -82,18 +150,3 @@ class Communication(object):
 		# 	seek_point = seek_point + packet_size
 
 		# print("[DEBUG] Done sending.")
-
-	def list_commands(self):
-		print("Commands")
-		print("--------")
-
-		print("List Local Current Directory: lls")
-		print("Change Local Directory: lcd <directory name>")
-		print("Print Local Working Directory: lpwd")
-
-		print("List Remote Current Directory: ls")
-		print("Change Remote Directory: cd <directory name>")
-		print("Print Remote Working Directory: pwd")
-
-		print("Upload File: upload <filename>")
-		print("Download File: download <filename>")
