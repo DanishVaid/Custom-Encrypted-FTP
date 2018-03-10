@@ -1,4 +1,3 @@
-
 from shared import files
 from shared import packets
 from shared import directory
@@ -27,6 +26,7 @@ class Communication(object):
 
 		zero_arg_commands = ["exit", "lls", "lpwd", "ls", "pwd"]
 		one_arg_commands = ["lcd", "cd", "upload", "download"]
+		commands_need_response = ["ls", "cd", "pwd", "upload", "download"]
 
 		while self.in_session:
 			command, args = self.take_input()
@@ -38,32 +38,8 @@ class Communication(object):
 			else:
 				print("Command not recognized.")
 
-			if command == "exit":
-				in_session = False
-				continue
-
-			elif command == "ls":
-				packet = packets.CommandPacket("ls")
-				self.outgoing_socket.sendall(packet)
-
-			elif command == "cd":
-				packet = packets.CommandPacket("cd")
-				self.outgoing_socket.sendall(packet)
-
-			elif command == "upload":
-				# TODO: move this functionality somewhere else, replace with command packet 'upload'
-				# TODO: and/or send metadata
-
-			elif command == "download":
-				# TODO: include filename
-				file_name = args[0]
-				packet = packets.CommandPacket("download")
-				self.outgoing_socket.sendall(packet)
-
-			else:
-				print("Command not recognized.")
-
-			self.receive_messages()
+			if command in commands_need_response:
+				self.receive_messages()
 
 	def take_input(self):
 		self.list_commands()
@@ -99,54 +75,51 @@ class Communication(object):
 		print("Download File: download <filename>")
 
 	def exit(self):
-		pass
+		self.in_session = False
 
 	def lls(self):
-		pass
+		print(self.directory.get_current_directory_files())
 
 	def lcd(self, directory):
-		pass
+		print(self.directory.set_current_directory(directory))
 
 	def lpwd(self):
-		pass
+		print(self.directory.get_current_directory())
 
 	def ls(self):
-		pass
+		packet = packets.CommandPacket("ls")
+		self.outgoing_socket.sendall(packet)
 
 	def cd(self, directory):
-		pass
+		packet = packets.CommandPacket("cd")
+		self.outgoing_socket.sendall(packet)
 
 	def pwd(self):
-		pass
+		packet = packets.CommandPacket("pwd")
+		self.outgoing_socket.sendall(packet)
 
 	def upload(self, filename):
-		pass
+		packet_size = 4096	# TODO: Set in command line, make global
+
+		filepath = self.directory.get_current_directory() + filename
+		file = files.Files(filepath, packet_size)
+
+		# TODO: send metadata
+		while True:
+			data = file.read_file_slice()
+
+			if len(data) == 0:
+				break
+
+			self.outgoing_socket.sendall(data)
+
+		print("[DEBUG] Done sending.")
 
 	def download(self, filename):
-		pass
+		packet = packets.CommandPacket("download_" + filename)
+		self.outgoing_socket.sendall(packet)
 
 	def receive_messages(self):
 		# TODO: Add blocking/timeout
 		# TODO: Do function, can take structure from server code
 		pass
-
-	# NOTE: This is called after handshake, when ack received from server
-	def send_file_data(self):
-		pass
-		# packet_size = 4096	# TODO: Set in command line, make global
-
-		# file_name = args[0]
-		# file_path = self.directory.get_current_directory() + file_name
-		# file = files.Files(file_path, packet_size)
-
-		# seek_point = 0
-		# while True:
-		# 	data = file.read_file(seek_point)
-
-		# 	if len(data) == 0:
-		# 		break
-
-		# 	self.outgoing_socket.sendall(data)
-		# 	seek_point = seek_point + packet_size
-
-		# print("[DEBUG] Done sending.")

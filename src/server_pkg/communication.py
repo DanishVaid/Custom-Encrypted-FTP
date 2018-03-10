@@ -3,12 +3,16 @@ import subprocess
 
 from shared import files
 from shared.packets import deserialize_packet
+from shared import directory
 
 class Communication(object):
 
 	def __init__(self, incoming_stream, outgoing_socket):
 		self.incoming_stream = incoming_stream
 		self.outgoing_socket = outgoing_socket
+
+		self.directory = directory.Directory("server")
+		self.in_session = True
 
 	def receive_messages(self):
 		print("Receiving Messages.")

@@ -1,6 +1,5 @@
 import os
 
-# TODO: Test all functions
 class Directory(object):
 
 	def __init__(self, user_type):
@@ -12,17 +11,17 @@ class Directory(object):
 		if directory == "..":
 			self.current_directory_prefixes = self.current_directory_prefixes[:-1]
 		else:
-			directory_files = get_current_directory_files()
+			directory_files = self.get_current_directory_files()
 
 			possible_directories = []
 			for file in directory_files:
-				possible_directory = get_current_directory() + file
-				if os.path.isdir(possible_directory):
+				possible_directory = self.get_current_directory() + file
+				if os.path.isdir(possible_directory):	#TODO: This does not work, learn functionality or find alternative
 					possible_directories.append(file)
 
 			if directory in possible_directories:
 				self.current_directory_prefixes.append(directory)
-				return build_directory_path_string(self.current_directory_prefixes)
+				return self.build_directory_path_string(self.current_directory_prefixes)
 			else:
 				return "Directory does not exist."
 
@@ -42,11 +41,11 @@ class Directory(object):
 
 		return directory_path
 
-	def set_home_directory(self, user_type):
+	def get_home_directory_prefixes(self, user_type):
 		shared_src_directory = os.getcwd()
 
-		path = shared_src_directory.split('/')
-		path = path[1:len(path) - 1]	# TODO: Test that cwd is src
-		path.append(user_type + "_home")
+		prefixes = shared_src_directory.split('/')
+		prefixes = prefixes[1:-1]	# TODO: Test that cwd is src
+		prefixes.append(user_type + "_home")
 
-		return home_directory
+		return prefixes
