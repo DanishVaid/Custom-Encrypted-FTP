@@ -5,9 +5,11 @@ import json
 #   - Command = c
 #   - Meta = m
 #   - Data = d
+#   - Response = r
 #################
 class CommandPacket(object):
     _type = 'c'
+    _overhead = 25          # Base overhead of packet with empty strings in variables
     data = None
 
     def __init__(self, data):
@@ -16,27 +18,66 @@ class CommandPacket(object):
     def serialize(self):
         res = {
             'type': self._type,
-            'data': self.data
+            'data': self.data or ''
             }
         return json.dumps(res).encode()
 
 
 class MetadataPacket(object):
     _type = 'm'
-    _overhead = 9999    # Modify to figure out overhead
+    _overhead = 80          # Base overhead of packet with empty strings in variables
+    file_uid = None
+    file_name = None
+    file_type = None
+    client_id = None
+    key = None              # Currently set to None since we do have security implemented 
+
+    def __init__(self, file_uid, file_name, file_type, client_id):
+        self.file_uid = file_uid
+        self.file_name = file_name
+        self.file_type = file_type
+        self.client_id = client_id
+
+    def serialize(self):
+        res = {
+            'type': self._type,
+            'file_uid': self.file_uid or '',
+            'file_name': self.file_name or '',
+            'file_type': self.file_type or '',
+            'client_id': self.client_id or ''
+            }
+        return json.dumps(res).encode()
+
 
 
 class DataPacket(object):  
     _type = 'd' 
-    _overhead = 9999    # Modify to figure out overhead 
-
-
-class ResponsePacket(object):
-    _type = 'r'
+    _overhead = 56          # Base overhead of packet with empty strings in variables
+    file_uid = None
+    seq_num = None
     data = None
 
-    def __init__(self, data):
-        self.data = data
+    def __init__(self, file_uid, seq_num, data):
+        self.file_uid = file_uid
+        self.seq_num = seq_num
+        self.data = data 
+
+    def serialize(self):
+        res = {
+            'type': self._type,
+            'file_uid': self.file_uid or '',
+            'seq_num': self.seq_num or '',
+            'data': self.data or ''
+            }
+        return json.dumps(res).encode()
+
+
+# TODO: Figure out Response Packet
+class ResponsePacket(object):
+    _type = 'r'
+
+    def __init__(self):
+        pass
 
 def deserialize_packet(input_packet):
     attributes = json.loads(input_packet.decode())
@@ -46,8 +87,10 @@ def deserialize_packet(input_packet):
     if packet_type == 'c':
         output = CommandPacket(attributes['data'])
     elif packet_type == 'm':
-        pass
+        output = MetadataPacket(int(attributes['file_uid']), attributes['file_name'], attributes['file_type'], int(attributes['client_id']))
     elif packet_type == 'd':
+        output = DataPacket(attributes['file_uid'], int(attributes['seq_num']), attributes['data'])
+    elif packet_type == 'r':
         pass
     else:
         print("Packet type ({}) not recoginzed.".format(attributes['type']))
