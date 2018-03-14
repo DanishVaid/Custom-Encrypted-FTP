@@ -21,7 +21,7 @@ class CommandPacket(object):
         return json.dumps(res).encode()
 
 
-class MetaPacket(object):
+class MetadataPacket(object):
     _type = 'm'
     _overhead = 9999    # Modify to figure out overhead
 
@@ -30,6 +30,13 @@ class DataPacket(object):
     _type = 'd' 
     _overhead = 9999    # Modify to figure out overhead 
 
+
+class ResponsePacket(object):
+    _type = 'r'
+    data = None
+
+    def __init__(self, data):
+        self.data = data
 
 def deserialize_packet(input_packet):
     attributes = json.loads(input_packet.decode())

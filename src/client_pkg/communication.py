@@ -75,6 +75,8 @@ class Communication(object):
 		print("Download File: download <filename>")
 
 	def exit(self):
+		packet = packets.CommandPacket("exit")
+		self.outgoing_socket.sendall(packet)
 		self.in_session = False
 
 	def lls(self):

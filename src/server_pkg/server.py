@@ -1,6 +1,6 @@
 import json
 
-from server_pkg import communication
+from server_pkg import connection_handler
 from shared import connection
 from time import sleep
 
@@ -12,7 +12,7 @@ class Server(object):
 		self.server_IP = None
 		self.server_port = None
 
-		# Temporary, to be removed when we add multi-threading/client
+		# TODO: Temporary, to be removed when we add multi-threading/client
 		self.client_IP = None
 		self.client_port = None
 
@@ -27,14 +27,14 @@ class Server(object):
 		self.close_connection()
 
 	def make_connection(self, config):
-		# To be changed to allow for multi-client
+		# TODO: To be changed to allow for multi-client
 		incoming_socket = connection.create_accept_socket(config['incoming_ip'], config['incoming_port'])
 		sleep(5)
 		self.outgoing_socket = connection.create_connect_socket(config['outgoing_ip'], config['outgoing_port'])
 		sleep(5)
 		self.incoming_stream = connection.open_connection(incoming_socket)
 
-	# To be changed to allow for multi-client
+	# TODO: To be changed to allow for multi-client
 	def close_connection(self):
 		connection.close_socket(self.outgoing_socket)
 
@@ -42,7 +42,7 @@ class Server(object):
 		self.server_IP = self.config['server_ip']
 		self.server_port = self.config['server_port']
 
-		# Temporary, to be removed when we add multi-threading/client
+		# TODO: Temporary, to be removed when we add multi-threading/client
 		self.client_IP = self.config['client_ip']
 		self.client_port = self.config['client_port']
 
