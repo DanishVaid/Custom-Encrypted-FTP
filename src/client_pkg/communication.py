@@ -8,20 +8,20 @@ class Communication(object):
 		self.incoming_stream = incoming_stream
 		self.outgoing_socket = outgoing_socket
 
-		self.directory = directory.Directory("client")
+		self.directory = directory.Directory("client")t
 		self.in_session = True
 
 	def take_command(self):
 		commands = {
 			"exit": exit,
-			"lls": lls,
-			"lcd": lcd,
-			"lpwd": lpwd,
-			"ls": ls,
-			"cd": cd,
-			"pwd": pwd,
-			"upload": upload,
-			"download": download
+			"lls": self.lls,
+			"lcd": self.lcd,
+			"lpwd": self.lpwd,
+			"ls": self.ls,
+			"cd": self.cd,
+			"pwd": self.pwd,
+			"upload": self.upload,
+			"download": self.download
 		}
 
 		zero_arg_commands = ["exit", "lls", "lpwd", "ls", "pwd"]

@@ -43,7 +43,7 @@ class MetadataPacket(object):
     def serialize(self):
         res = {
             'type': self._type,
-            'file_uid': str(self.file_uid) or '',
+            'file_uid': str(self.file_uid).zfill(4) or '',
             'file_name': self.file_name or '',
             'file_type': self.file_type or '',
             'client_id': self.client_id or ''
@@ -74,7 +74,6 @@ class DataPacket(object):
             'data': self.data or ''
             }
         return json.dumps(res).encode()
-
 
 # TODO: Figure out Response Packet
 class ResponsePacket(object):
