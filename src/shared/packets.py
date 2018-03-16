@@ -37,11 +37,13 @@ class MetadataPacket(object):
         self.file_name = file_name
         self.file_type = file_type
         self.client_id = client_id
+        # Added file_uid and seq_num data to _overhead
+        self._overhead = self._overhead + 4 + len(file_name) + len(client_id)
 
     def serialize(self):
         res = {
             'type': self._type,
-            'file_uid': self.file_uid or '',
+            'file_uid': str(self.file_uid) or '',
             'file_name': self.file_name or '',
             'file_type': self.file_type or '',
             'client_id': self.client_id or ''
@@ -61,12 +63,14 @@ class DataPacket(object):
         self.file_uid = file_uid
         self.seq_num = seq_num
         self.data = data 
+        # Added file_uid and seq_num data to _overhead
+        self._overhead = self._overhead + 4 + 4
 
     def serialize(self):
         res = {
             'type': self._type,
-            'file_uid': self.file_uid or '',
-            'seq_num': self.seq_num or '',
+            'file_uid': str(self.file_uid).zfill(4) or '',
+            'seq_num': str(self.seq_num).zfill(4) or '',
             'data': self.data or ''
             }
         return json.dumps(res).encode()
