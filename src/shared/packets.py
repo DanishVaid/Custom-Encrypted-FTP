@@ -6,6 +6,7 @@ import json
 #   - Meta = m
 #   - Data = d
 #   - Response = r
+#   - End Of Data = e
 #################
 class CommandPacket(object):
     _type = 'c'
@@ -22,10 +23,19 @@ class CommandPacket(object):
             }
         return json.dumps(res).encode()
 
+    def __repr__(self):
+        res = "Packet is:\n\t"
+        attrs = [
+            'type = ' + self._type,
+            'data = ' + str(self.data) or ''
+        ]
+        res += '\n\t'.join(attrs)
+        return res
+
 
 class MetadataPacket(object):
     _type = 'm'
-    _overhead = 80          # Base overhead of packet with empty strings in variables
+    _overhead = 84          # Base overhead of packet with empty strings in variables
     file_uid = None
     file_name = None
     file_type = None
@@ -38,7 +48,6 @@ class MetadataPacket(object):
         self.file_type = file_type
         self.client_id = client_id
         # Added file_uid and seq_num data to _overhead
-        self._overhead = self._overhead + 4 + len(file_name) + len(client_id)
 
     def serialize(self):
         res = {
@@ -50,11 +59,22 @@ class MetadataPacket(object):
             }
         return json.dumps(res).encode()
 
+    def __repr__(self):
+        res = "Packet is:"
+        attrs = [
+            'type = ' + self._type,
+            'file_uid = ' + str(self.file_uid).zfill(4) or ''.zfill(4),
+            'file_name = ' + self.file_name or '',
+            'file_type = ' + self.file_type or '',
+            'client_id = ' + self.client_id or ''
+        ]
+        res += '\n\t'.join(attrs)
+        return res
 
 
 class DataPacket(object):  
     _type = 'd' 
-    _overhead = 56          # Base overhead of packet with empty strings in variables
+    _overhead = 64          # Base overhead of packet with empty strings in variables
     file_uid = None
     seq_num = None
     data = None
@@ -64,23 +84,76 @@ class DataPacket(object):
         self.seq_num = seq_num
         self.data = data 
         # Added file_uid and seq_num data to _overhead
-        self._overhead = self._overhead + 4 + 4
 
     def serialize(self):
         res = {
             'type': self._type,
-            'file_uid': str(self.file_uid).zfill(4) or '',
-            'seq_num': str(self.seq_num).zfill(4) or '',
+            'file_uid': str(self.file_uid).zfill(4) or ''.zfill(4),
+            'seq_num': str(self.seq_num).zfill(4) or ''.zfill(4),
             'data': self.data or ''
             }
         return json.dumps(res).encode()
 
-# TODO: Figure out Response Packet
+    def __repr__(self):
+        res = "Packet is:\n\t"
+        attrs = [
+            'type = ' + self._type,
+            'file_uid = ' + str(self.file_uid).zfill(4) or '',
+            'seq_num = ' + str(self.seq_num).zfill(4) or '',
+            'data = ' + self.data or ''
+        ]
+        res += '\n\t'.join(attrs)
+        return res
+
+
+class EndOfDataPacket(object):
+    _type = 'e'
+    _overhead = 33
+    file_uid = None
+
+    def __init__(self, file_uid):
+        self.file_uid = file_uid
+
+    def serialize(self):
+        res = {
+            'type': self._type,
+            'file_uid': str(self.file_uid).zfill(4) or ''.zfill(4)
+            }
+        return json.dumps(res).encode()
+    
+    def __repr__(self):
+        res = "Packet is:\n\t"
+        attrs = [
+            'type = ' + self._type,
+            'file_uid = ' + str(self.file_uid).zfill(4) or ''
+        ]
+        res += '\n\t'.join(attrs)
+        return res
+
 class ResponsePacket(object):
     _type = 'r'
+    _overhead = 25
+    data = None
 
-    def __init__(self):
-        pass
+    def __init__(self, data):
+        self.data = data
+
+    def serialize(self):
+        res = {
+            'type': self._type,
+            'data': self.data or ''
+            }
+        return json.dumps(res).encode()
+    
+    def __repr__(self):
+        res = "Packet is:\n\t"
+        attrs = [
+            'type = ' + self._type,
+            'data = ' + str(self.data) or ''
+        ]
+        res += '\n\t'.join(attrs)
+        return res
+
 
 def deserialize_packet(input_packet):
     attributes = json.loads(input_packet.decode())
@@ -94,7 +167,9 @@ def deserialize_packet(input_packet):
     elif packet_type == 'd':
         output = DataPacket(attributes['file_uid'], int(attributes['seq_num']), attributes['data'])
     elif packet_type == 'r':
-        pass
+        output = ResponsePacket(attributes['data'])
+    elif packet_type == 'e':
+        output = EndOfDataPacket(attributes['file_uid'])
     else:
         print("Packet type ({}) not recoginzed.".format(attributes['type']))
 
