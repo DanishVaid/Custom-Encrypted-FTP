@@ -27,7 +27,7 @@ class Server(object):
 		conn_handler = connection_handler.ConnectionHandler(self.outgoing_socket)
 		msg_queue.add_handler(conn_handler)
 
-		message_queue.receive_messages()
+		msg_queue.receive_messages()
 		self.close_connection()
 
 	def make_connection(self):

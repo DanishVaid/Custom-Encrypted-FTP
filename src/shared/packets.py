@@ -90,7 +90,7 @@ class DataPacket(object):
             'type': self._type,
             'file_uid': str(self.file_uid).zfill(4) or ''.zfill(4),
             'seq_num': str(self.seq_num).zfill(4) or ''.zfill(4),
-            'data': self.data or ''
+            'data': self.data.decode('utf8') or ''
             }
         return json.dumps(res).encode()
 
@@ -165,7 +165,7 @@ def deserialize_packet(input_packet):
     elif packet_type == 'm':
         output = MetadataPacket(int(attributes['file_uid']), attributes['file_name'], attributes['file_type'], int(attributes['client_id']))
     elif packet_type == 'd':
-        output = DataPacket(attributes['file_uid'], int(attributes['seq_num']), attributes['data'])
+        output = DataPacket(attributes['file_uid'], int(attributes['seq_num']), attributes['data'].encode('utf8'))
     elif packet_type == 'r':
         output = ResponsePacket(attributes['data'])
     elif packet_type == 'e':

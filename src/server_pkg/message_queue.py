@@ -15,10 +15,11 @@ class MessageQueue(object):
 
 		in_session = True
 		while(in_session):
-			incoming_stream.settimeout(1)
+			self.incoming_stream.settimeout(1)
 
 			try:
 				data = self.incoming_stream.recv(4096)
+				print(data)
 				packet = deserialize_packet(data)
 
 				# TODO: Current hardcoded for one connection.
