@@ -20,18 +20,21 @@ class Server(object):
 		self.incoming_stream = None
 		self.outgoing_socket = None
 
-	def run(self, config):
+	def run(self):
 		self.configure()
 		self.make_connection()
-		message_queue = message_queue.MessageQueue(self.incoming_stream)
+		msg_queue = message_queue.MessageQueue(self.incoming_stream)
+		conn_handler = connection_handler.ConnectionHandler(self.outgoing_socket)
+		msg_queue.add_handler(conn_handler)
+
 		message_queue.receive_messages()
 		self.close_connection()
 
-	def make_connection(self, config):
+	def make_connection(self):
 		# TODO: To be changed to allow for multi-client
-		incoming_socket = connection.create_accept_socket(config['incoming_ip'], config['incoming_port'])
+		incoming_socket = connection.create_accept_socket(self.server_IP, self.server_port)
 		sleep(5)
-		self.outgoing_socket = connection.create_connect_socket(config['outgoing_ip'], config['outgoing_port'])
+		self.outgoing_socket = connection.create_connect_socket(self.client_IP, self.client_port)
 		sleep(5)
 		self.incoming_stream = connection.open_connection(incoming_socket)
 
