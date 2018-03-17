@@ -1,8 +1,9 @@
 import json
+from time import sleep
 
+from server_pkg import message_queue
 from server_pkg import connection_handler
 from shared import connection
-from time import sleep
 
 class Server(object):
 

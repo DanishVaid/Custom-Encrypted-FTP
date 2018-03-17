@@ -18,10 +18,16 @@ class MessageQueue(object):
 			incoming_stream.settimeout(1)
 
 			try:
-				data = incoming_stream.recv(4096)
+				data = self.incoming_stream.recv(4096)
 				packet = deserialize_packet(data)
+
+				# TODO: Current hardcoded for one connection.
+				self.connection_handlers[0].consume_packet(packet)
 
 				# TODO: Figure out how to safely close server.
 
 			except socket.timeout:
 				pass
+
+	def add_handler(self, connection_handler):
+		self.connection_handlers.append(connection_handler)

@@ -27,19 +27,23 @@ class ConnectionHandler(object):
 	def consume_packet(self, packet):
 		if packet._type == 'c':
 			# TODO: Figure how to send to close connection message
-			process_command(packet)
+			self.process_command(packet)
 		elif packet._type == 'm':
-			process_metadata(packet)
+			self.process_metadata(packet)
 		elif packet._type == 'd':
-			process_data(packet)
+			self.process_data(packet)
 		else:
 			print("[ERROR] Packet type not detected. Packet dropped.")
 			print("[DEBUG] Packet data:", data)
 
 	def process_command(self, packet):
-		if pack.data == 'ls':
+		if packet.data == 'ls':
 			# TODO: send string to client
-			print('\nFiles in current directory:\n', subprocess.getoutput('ls'))
+			directory_files = self.directory.get_current_directory_files()
+			directory_files = ' '.join(directory_files)
+
+			packet = packet.ReponsePacket(directory_files)
+			self.outgoing_socket.sendall(packet.serialize())
 
 	def process_metadata(self):
 		pass
