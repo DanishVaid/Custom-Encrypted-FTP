@@ -8,12 +8,12 @@ class Communication(object):
 		self.incoming_stream = incoming_stream
 		self.outgoing_socket = outgoing_socket
 
-		self.directory = directory.Directory("client")t
+		self.directory = directory.Directory("client")
 		self.in_session = True
 
 	def take_command(self):
 		commands = {
-			"exit": exit,
+			"exit": self.exit,
 			"lls": self.lls,
 			"lcd": self.lcd,
 			"lpwd": self.lpwd,
@@ -78,6 +78,7 @@ class Communication(object):
 		packet = packets.CommandPacket("exit")
 		self.outgoing_socket.sendall(packet)
 		self.in_session = False
+		print("Exiting session.")
 
 	def lls(self):
 		print(self.directory.get_current_directory_files())
@@ -101,27 +102,42 @@ class Communication(object):
 		self.outgoing_socket.sendall(packet)
 
 	def upload(self, filename):
-		packet_size = 4096	# TODO: Set in command line, make global
+		packet_size = 4096	# TODO: If we have time, avoid hard coding
 
 		filepath = self.directory.get_current_directory() + filename
 		file = files.Files(filepath, packet_size)
 
-		# TODO: send metadata
+		command_packet = packets.CommandPacket("upload")
+		self.outgoing_socket.sendall(command_packet)
+
+		#TODO: Set blocking to receive "ack", possibly make a new function
+
+
+		#TODO: Send metadata packet
+		metadata_packet = packets.MetadataPacket()	#TODO: Add parameters
+		self.outgoing_socket.sendall(metadata_packet)
+		
 		while True:
 			data = file.read_file_slice()
 
 			if len(data) == 0:
+				# TODO: send "end" packet
+				end_packet = packets.ResponsePacket()
 				break
 
 			self.outgoing_socket.sendall(data)
 
-		print("[DEBUG] Done sending.")
+		print("Successfully uploaded:", filename)
 
 	def download(self, filename):
+		# TODO: Figure out protocol
 		packet = packets.CommandPacket("download_" + filename)
 		self.outgoing_socket.sendall(packet)
 
 	def receive_messages(self):
 		# TODO: Add blocking/timeout
 		# TODO: Do function, can take structure from server code
+		pass
+
+	def receive_ack(self):
 		pass

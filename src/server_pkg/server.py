@@ -22,8 +22,8 @@ class Server(object):
 	def run(self, config):
 		self.configure()
 		self.make_connection()
-		user_messages = communication.Communication(self.incoming_stream, self.outgoing_socket)
-		user_messages.receive_messages()
+		message_queue = message_queue.MessageQueue(self.incoming_stream)
+		message_queue.receive_messages()
 		self.close_connection()
 
 	def make_connection(self, config):
