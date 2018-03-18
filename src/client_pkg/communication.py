@@ -19,6 +19,7 @@ class Communication(object):
 
 		self.enc_obj = None
 		self.client_id = None
+		self.file_uid = 0
 
 	def establish_secure_key(self):
 		init_pack = packets.InitializerPacket()
@@ -111,13 +112,16 @@ class Communication(object):
 		self.in_session = False
 
 	def lls(self):
-		print(self.directory.get_current_directory_files())
+		files = ' '.join(self.directory.get_current_directory_files())
+		print("[CLIENT] Current working directory files:\n", files)
 
 	def lcd(self, directory):
-		print(self.directory.set_current_directory(directory))
+		cwd = self.directory.set_current_directory(directory)
+		print("[CLIENT] CWD now is:", cwd)
 
 	def lpwd(self):
-		print(self.directory.get_current_directory())
+		cwd = self.directory.get_current_directory()
+		print("[CLIENT] CWD is:", cwd)
 
 	def ls(self):
 		packet = packets.CommandPacket("ls")
@@ -132,9 +136,8 @@ class Communication(object):
 		self.outgoing_socket.sendall(packet.serialize(self.enc_obj))
 
 	def upload(self, filename):
-		packet_size = 4096	# TODO: If we have time, avoid hard coding
-		file_uid = 1 # FIXME: Set file_uid 
-		client_id = 1 # FIXME: Set client_id
+		packet_size = 4096
+		self.file_uid += 1
 
 		filepath = self.directory.get_current_directory() + '/' + filename
 		curr_file = files.Files(filepath, 'rb', packet_size - packets.DataPacket._overhead)
@@ -150,7 +153,7 @@ class Communication(object):
 
 		# Build and send 'metadata' packet
 		filename = filename.split('.')
-		metadata_packet = packets.MetadataPacket(file_uid, filename[0], filename[1], client_id)
+		metadata_packet = packets.MetadataPacket(self.file_uid, filename[0], filename[1], self.client_id)
 		self.outgoing_socket.sendall(metadata_packet.serialize(self.enc_obj))
 		
 		curr_pack = None
@@ -161,13 +164,13 @@ class Communication(object):
 
 			if len(data) == 0:
 				# Create an 'end' packet to send
-				curr_pack = packets.EndOfDataPacket(file_uid)
+				curr_pack = packets.EndOfDataPacket(self.file_uid)
 				self.outgoing_socket.sendall(curr_pack.serialize(self.enc_obj))
 				print('End of data packet Sent')
 				self.receive_ack('upload')
 				return
 			else:
-				curr_pack = packets.DataPacket(file_uid, seq_num, data)
+				curr_pack = packets.DataPacket(self.file_uid, seq_num, data)
 
 			self.outgoing_socket.sendall(curr_pack.serialize(self.enc_obj))
 
@@ -216,19 +219,28 @@ class Communication(object):
 		print(content)
 		
 	def receive_download(self):
-		# FIXME: Incorporate file_uid
-		# FIXME: Double check correct information
 		file_uid, file_name, file_type, client_id = self.receive_metadata()
+
+		if self.client_id != client_id:
+			print("[ERROR] Incorrect client_id. Exiting...")
+			sys.exit(1)
+
+		self.file_uid = file_uid
+
 		new_file_path = self.directory.get_current_directory() + '/' + file_name + '.' + file_type
 		new_file = files.Files(new_file_path, 'ab')
 
 		while(True):
 			seq_num = 0
 			try:
+				seq_num += 1
 				self.incoming_stream.settimeout(1)
 				data = self.incoming_stream.recv(4096)
 				packet = packets.deserialize_packet(data, self.enc_obj)
-				seq_num += 1
+
+				if packet.file_uid != self.file_uid:
+					print("[ERROR] Packet dumped, incorrect file uid. Exiting...")
+					sys.exit(1)
 
 				if packet._type == 'e':
 					new_file.close()

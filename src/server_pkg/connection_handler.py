@@ -19,7 +19,7 @@ class ConnectionHandler(object):
 		
 		self.enc_obj = enc_obj
 		self.client_id = client_id
-		
+		self.file_uid = 0
 
 	def consume_packet(self, packet):
 		if packet._type == 'c':
@@ -39,7 +39,7 @@ class ConnectionHandler(object):
 		packet_data_list = packet.data.split(' ')
 		if packet_data_list[0] == 'ls':
 			directory_files = self.directory.get_current_directory_files()
-			res = 'ls [REMOTE] Current directory files are: ' + ' '.join(directory_files)
+			res = 'ls [REMOTE] Current directory files are:\n ' + ' '.join(directory_files)
 
 			packet = packets.ResponsePacket(res)
 			self.outgoing_socket.sendall(packet.serialize(self.enc_obj))
@@ -87,9 +87,8 @@ class ConnectionHandler(object):
 		self.outgoing_socket.sendall(ack_packet.serialize(self.enc_obj))
 
 	def upload(self, filename):
-		packet_size = 4096	# TODO: If we have time, avoid hard coding
-		file_uid = 1 # FIXME: Set file_uid 
-		client_id = 1 # FIXME: Set client_id
+		packet_size = 4096
+		self.file_uid += 1
 
 		ack_packet = packets.ResponsePacket('download ACK')
 		self.outgoing_socket.sendall(ack_packet.serialize(self.enc_obj))
@@ -102,7 +101,7 @@ class ConnectionHandler(object):
 
 		# Build and send 'metadata' packet
 		filename = filename.split('.')
-		metadata_packet = packets.MetadataPacket(file_uid, filename[0], filename[1], client_id)
+		metadata_packet = packets.MetadataPacket(self.file_uid, filename[0], filename[1], self.client_id)
 		self.outgoing_socket.sendall(metadata_packet.serialize(self.enc_obj))
 		
 		curr_pack = None
@@ -113,11 +112,11 @@ class ConnectionHandler(object):
 
 			if len(data) == 0:
 				# Create an 'end' packet to send
-				curr_pack = packets.EndOfDataPacket(file_uid)
+				curr_pack = packets.EndOfDataPacket(self.file_uid)
 				self.outgoing_socket.sendall(curr_pack.serialize(self.enc_obj))
 				break
 			else:
-				curr_pack = packets.DataPacket(file_uid, seq_num, data)
+				curr_pack = packets.DataPacket(self.file_uid, seq_num, data)
 
 			self.outgoing_socket.sendall(curr_pack.serialize(self.enc_obj))
 
@@ -127,7 +126,9 @@ class ConnectionHandler(object):
 		print("Successfully uploaded:", filename)
 
 	def download(self, packet):
-		# FIXME: Incorporate file_uid
-		# FIXME: Double check correct information
+		if packet.file_uid != self.file_uid:
+			print("[ERROR] File uid is not matching. Exiting...")
+			from server_pkg.message_queue import closeServer
+			raise closeServer
 
 		self.file_obj.write_file_by_append(packet.data)

@@ -219,7 +219,7 @@ class InitializerPacket(object):
 def deserialize_init_packet(init_packet, public=False, sym_key=None):
     from server_pkg.server import get_server_private_key
     decrypted_packet = None
-    # FIXME: Clean up print statements
+    # Print statements are here to showcase each step of the packet conversion
     print("ENCRYPTED PACKET IS:", init_packet)
     if public:
         private_key_obj = get_server_private_key()
@@ -253,11 +253,11 @@ def deserialize_packet(input_packet, enc_obj):
     elif packet_type == 'm':
         output = MetadataPacket(int(attributes['file_uid']), attributes['file_name'], attributes['file_type'], int(attributes['client_id']))
     elif packet_type == 'd':
-        output = DataPacket(attributes['file_uid'], int(attributes['seq_num']), attributes['data'].encode('utf8'))
+        output = DataPacket(int(attributes['file_uid']), int(attributes['seq_num']), attributes['data'].encode('utf8'))
     elif packet_type == 'r':
         output = ResponsePacket(attributes['data'])
     elif packet_type == 'e':
-        output = EndOfDataPacket(attributes['file_uid'])
+        output = EndOfDataPacket(int(attributes['file_uid']))
     else:
         print("Packet type ({}) not recoginzed.".format(attributes['type']))
 
