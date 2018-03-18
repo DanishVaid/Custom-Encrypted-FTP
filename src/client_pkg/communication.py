@@ -14,6 +14,29 @@ class Communication(object):
 		self.directory = directory.Directory("client")
 		self.in_session = True
 
+		self.key = None
+		self.client_id = None
+
+	def establish_secure_key(self):
+		init_pack = packets.InitializerPacket()
+		self.key = init_pack.sym_key
+		self.outgoing_socket.sendall(init_pack.serialize(True))
+		
+		while(True):
+			self.incoming_stream.settimeout(1)
+			try:
+				data = self.incoming_stream.recv(4096)
+				packet = packets.deserialize_init_packet(data, False, self.key)
+
+				if packet.sym_key != self.key:
+					print("[ERROR] Failed to establish same key")
+					sys.exit(1)
+
+				self.client_id = packet.client_id
+				return
+			except socket.timeout:
+				pass
+
 	def take_command(self):
 		commands = {
 			"exit": self.exit,

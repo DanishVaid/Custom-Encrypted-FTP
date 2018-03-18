@@ -28,9 +28,7 @@ class Server(object):
 		self.configure()
 		self.make_connection()
 		msg_queue = message_queue.MessageQueue(self.incoming_stream)
-		conn_handler = connection_handler.ConnectionHandler(self.outgoing_socket)
-		msg_queue.add_handler(conn_handler)
-
+		msg_queue.establish_secure_key(self.outgoing_socket)
 		msg_queue.receive_messages()
 		self.close_connection()
 
@@ -64,7 +62,7 @@ def init(config_file):
 		
 	print("Starting server . . .")
 
-	with open(config['private_key_path'], 'rb') as f:
+	with open(config['private_key_path'], 'r') as f:
 		private_key_data = f.read()
 	PRIVATE_KEY = RSA.importKey(private_key_data)
 
@@ -72,3 +70,7 @@ def init(config_file):
 	server.run()
 
 	print("-- Server closed --")
+
+def get_server_private_key():
+	global PRIVATE_KEY
+	return PRIVATE_KEY

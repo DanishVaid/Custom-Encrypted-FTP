@@ -26,6 +26,7 @@ class Client(object):
 		self.configure()
 		self.make_connection()
 		user_communication = communication.Communication(self.incoming_stream, self.outgoing_socket)
+		user_communication.establish_secure_key()
 		user_communication.take_command()
 		self.close_connection()
 
@@ -61,10 +62,11 @@ def init(config_file):
 	SERVER_PUBLIC_KEY = RSA.importKey(public_key_data)
 	print("Server Public Key initialized . . .")
 
-	temp = "KEY IS:{}\nTEST DATA: hello\nENCRYP DATA:{}".format(SERVER_PUBLIC_KEY.exportKey(), SERVER_PUBLIC_KEY.encrypt('hello'.encode(), 32)[0] )
-	print(temp)
-
 	client = Client(config)
 	client.run()
 
 	print("Client closed.")
+
+def get_server_public_key():
+	global SERVER_PUBLIC_KEY
+	return SERVER_PUBLIC_KEY

@@ -1,4 +1,8 @@
 import json
+import os
+import binascii
+from Crypto.Cipher import AES
+
 
 #################
 # Packet Styles:
@@ -15,11 +19,13 @@ class CommandPacket(object):
 
     def __init__(self, data):
         self.data = data
+        self.key = 'h' * 32
 
     def serialize(self):
         res = {
             'type': self._type,
-            'data': self.data or ''
+            'data': self.data or '',
+            'key' : str(self.key)
             }
         return json.dumps(res).encode()
 
@@ -27,7 +33,8 @@ class CommandPacket(object):
         res = "Packet is:\n\t"
         attrs = [
             'type = ' + self._type,
-            'data = ' + str(self.data) or ''
+            'data = ' + str(self.data) or '',
+            'key = ' + str(self.key) or ''.zfill(32)
         ]
         res += '\n\t'.join(attrs)
         return res
@@ -40,7 +47,6 @@ class MetadataPacket(object):
     file_name = None
     file_type = None
     client_id = None
-    key = None              # Currently set to None since we do have security implemented 
 
     def __init__(self, file_uid, file_name, file_type, client_id):
         self.file_uid = file_uid
@@ -58,6 +64,7 @@ class MetadataPacket(object):
             'client_id': self.client_id or ''
             }
         return json.dumps(res).encode()
+
 
     def __repr__(self):
         res = "Packet is:"
@@ -154,6 +161,60 @@ class ResponsePacket(object):
         res += '\n\t'.join(attrs)
         return res
 
+class InitializerPacket(object):
+    _type = 'i'
+    sym_key = None
+    client_id = None
+
+    def __init__(self, sym_key=None, client_id=None):
+        if sym_key is None:
+            self.sym_key = binascii.hexlify(os.urandom(16))
+        else:
+            self.sym_key = sym_key
+        self.client_id = client_id
+
+    def serialize(self, public=False):
+        from client_pkg.client import get_server_public_key
+        res = {
+            'type': self._type,
+            'sym_key': self.sym_key.decode('utf8'),
+            'client_id': self.client_id or ''
+            }
+        payload = json.dumps(res).encode()
+
+        if public:
+            pub_key_obj = get_server_public_key()
+            return pub_key_obj.encrypt(payload, 32)[0] 
+        else:
+            encryption = AES.new(self.sym_key, AES.MODE_CTR)
+            return encryption.encrypt(payload)
+    
+    def __repr__(self):
+        res = "Packet is:\n\t"
+        attrs = [
+            'type = ' + self._type,
+            'sym_key = ' + str(self.sym_key) or '',
+            'client_id = ' + self.client_id or ''
+        ]
+        res += '\n\t'.join(attrs)
+        return res
+
+
+def deserialize_init_packet(init_packet, public=False, sym_key=None):
+    from server_pkg.server import get_server_private_key
+    decrypted_packet = None
+    if public:
+        private_key_obj = get_server_private_key()
+        decrypted_packet = private_key_obj.decrypt(init_packet)
+    else:
+        encryption = AES.new(sym_key, AES.MODE_CTR)
+        decrypted_packet = encryption.decrypt(init_packet)
+
+    attributes = json.loads(decrypted_packet.decode())
+    assert attributes['type'] == 'i', ("[ERROR] Excepted Initilizaton Packet, got: TYPE:{}".format(attributes['type']))
+
+    output = InitializerPacket(attributes['sym_key'].encode('utf8'), attributes['client_id'])
+    return output
 
 def deserialize_packet(input_packet):
     print(input_packet.decode())

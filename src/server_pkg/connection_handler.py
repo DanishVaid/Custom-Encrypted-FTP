@@ -7,7 +7,7 @@ from shared import directory
 
 class ConnectionHandler(object):
 
-	def __init__(self, outgoing_socket):
+	def __init__(self, outgoing_socket, sym_key, client_id):
 		self.outgoing_socket = outgoing_socket
 
 		self.directory = directory.Directory("server")
@@ -15,7 +15,10 @@ class ConnectionHandler(object):
 
 		self.file_obj = None
 		self.file_uid = None
-		self.client_id = None
+		
+		self.key = sym_key
+		self.client_id = client_id
+		
 
 	def consume_packet(self, packet):
 		if packet._type == 'c':
