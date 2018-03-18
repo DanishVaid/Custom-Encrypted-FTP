@@ -29,7 +29,7 @@ class Communication(object):
 
 		zero_arg_commands = ["exit", "lls", "lpwd", "ls", "pwd"]
 		one_arg_commands = ["lcd", "cd", "upload", "download"]
-		commands_need_response = ["exit", "ls", "cd", "pwd", "upload"]
+		commands_need_response = ["ls", "cd", "pwd"]
 
 		self.list_commands()
 		while self.in_session:
@@ -44,8 +44,6 @@ class Communication(object):
 
 			if command in commands_need_response:
 				self.receive_messages()
-			elif command == 'download':
-				self.receive_download()
 
 	def take_input(self):
 		console_input = input("\nCommand (enter 'exit' to quit): ")
@@ -81,6 +79,10 @@ class Communication(object):
 	def exit(self):
 		packet = packets.CommandPacket("exit")
 		self.outgoing_socket.sendall(packet.serialize())
+		if not self.receive_ack('exit'):
+			print("[ERROR] Exit ACK not received")
+			sys.exit(1)
+		self.in_session = False
 
 	def lls(self):
 		print(self.directory.get_current_directory_files())
@@ -97,7 +99,7 @@ class Communication(object):
 		print("[REMOTE] Current directory files are:")
 
 	def cd(self, directory):
-		packet = packets.CommandPacket("cd")
+		packet = packets.CommandPacket('cd ' + directory)
 		self.outgoing_socket.sendall(packet.serialize())
 
 	def pwd(self):
@@ -109,14 +111,14 @@ class Communication(object):
 		file_uid = 1 # TODO: Set file_uid 
 		client_id = 1 # TODO: Set client_id
 
-		filepath = self.directory.get_current_directory() + filename
-		file = files.Files(filepath, packet_size - packets.DataPacket._overhead)
+		filepath = self.directory.get_current_directory() + '/' + filename
+		curr_file = files.Files(filepath, 'rb', packet_size - packets.DataPacket._overhead)
 
 		command_packet = packets.CommandPacket("upload")
 		self.outgoing_socket.sendall(command_packet.serialize())
 
-		# Receive and ensure its a correct 'ACK'
-		if not self.receive_ack():
+		# Receive and ensure its a correct 'ACK' (checking keys)
+		if not self.receive_ack('upload'):
 			return
 
 		# Build and send 'metadata' packet
@@ -128,31 +130,35 @@ class Communication(object):
 		seq_num = 0
 		while True:
 			seq_num += 1
-			data = file.read_file_slice()
+			data = curr_file.read_file_slice()
 
 			if len(data) == 0:
 				# Create an 'end' packet to send
 				curr_pack = packets.EndOfDataPacket(file_uid)
+				self.outgoing_socket.sendall(curr_pack.serialize())
+				print('End of data packet Sent')
+				self.receive_ack('upload')
+				return
 			else:
 				curr_pack = packets.DataPacket(file_uid, seq_num, data)
 
 			self.outgoing_socket.sendall(curr_pack.serialize())
-
+		curr_file.close()
 		print("Successfully uploaded:", filename)
 
 	def download(self, filename):
 		# TODO: Figure out protocol
 		packet = packets.CommandPacket("download " + filename)
 		self.outgoing_socket.sendall(packet.serialize())
+		if not self.receive_ack('download'):
+			return
+		self.receive_download()
 
 	def receive_messages(self):
 		response_to_function = {
-			"exit": self.close_client,
 			"ls": self.print_response,
 			"cd": self.print_response,
 			"pwd": self.print_response,
-			"upload": self.send_upload,
-			"download": self.receive_download
 		}
 
 		waiting = True
@@ -169,37 +175,26 @@ class Communication(object):
 					sys.exit(1)
 
 				response = packet.data.split(' ')
-				reponse_to_function[response[0]](response[1])
-				
-				# TODO: Do we want to print the response only?
-				print(packet.data)
+				response_to_function[response[0]](response[1:])
 				break
 
 			except socket.timeout:
 				pass
 
-	def close_client(self, ack):
-		if ack == "ack":
-			self.in_session = False
-			print("Exiting session.")
-		else:
-			print("[ERROR] Ack message was not received correctly")
-			sys.exit(1)
 
 	def print_response(self, content):
+		# content = content.split('|')
+		content = ' '.join(content)
 		print(content)
 		
-	def receive_download(self, response):
+	def receive_download(self):
 		# TODO: Incorporate file_uid
-		if not self.receive_ack():
-			return
-
 		# TODO: Double check correct information
 		file_uid, file_name, file_type, client_id = self.receive_metadata()
-		new_file = files.File(file_name + file_type)
+		new_file_path = self.directory.get_current_directory() + '/' + file_name + '.' + file_type
+		new_file = files.Files(new_file_path, 'ab')
 
-		waiting = True
-		while(waiting):
+		while(True):
 			seq_num = 0
 			try:
 				self.incoming_stream.settimeout(1)
@@ -209,24 +204,24 @@ class Communication(object):
 				seq_num += 1
 
 				if packet._type == 'e':
+					new_file.close()
 					return
 
 				if packet._type != 'd':
-					print("(ERROR) Received following instead of data/end packet:\n\ttype = {}, data = {}".format(packet._type, packet.data))
+					print("[ERROR] Received following instead of data/end packet:\n\ttype = {}, data = {}".format(packet._type, packet.data))
 					sys.exit(1)
 				elif seq_num != packet.seq_num:
-					print("(ERROR) Sequence Number does not match:\n\ttype = {}, data = {}".format(packet._type, packet.data))
+					print("[ERROR] Sequence Number does not match:\n\ttype = {}, data = {}".format(packet._type, packet.data))
 					sys.exit(1)
 
-				new_file.write_by_append(packet.data)
+				new_file.write_file_by_append(packet.data)
 				
 			except socket.timeout:
 				pass
 
 
 	def receive_metadata(self):
-		waiting = True
-		while(waiting):
+		while(True):
 			try:
 				self.incoming_stream.settimeout(1)
 				data = self.incoming_stream.recv(4096)
@@ -234,7 +229,7 @@ class Communication(object):
 				packet = packets.deserialize_packet(data)
 
 				if packet._type != 'm':
-					print("(ERROR) Received following instead of metadata packet:\n\ttype = {}, data = {}".format(packet._type, packet.data))
+					print("[ERROR] Received following instead of metadata packet:\n\ttype = {}, data = {}".format(packet._type, packet.data))
 					sys.exit(1)
 
 				return packet.file_uid, packet.file_name, packet.file_type, packet.client_id
@@ -242,9 +237,8 @@ class Communication(object):
 			except socket.timeout:
 				pass
 
-	def receive_ack(self):
-		waiting = True
-		while(waiting):
+	def receive_ack(self, func):
+		while(True):
 			self.incoming_stream.settimeout(1)
 
 			try:
@@ -252,8 +246,8 @@ class Communication(object):
 				# TODO: Decrypt with sym key when we add encyrption
 				packet = packets.deserialize_packet(data)
 
-				if packet._type != 'r' or packet.data != 'ACK':
-					print("(ERROR) Received following instead of a correct ACK:\n\ttype = {}, data = {}".format(packet._type, packet.data))
+				if packet._type != 'r' or packet.data != "{} ACK".format(func):
+					print("[ERROR] Received following instead of a correct ACK:\n\ttype = {}, data = {}".format(packet._type, packet.data))
 					return False
 				
 				return True

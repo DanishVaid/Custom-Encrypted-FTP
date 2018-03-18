@@ -156,6 +156,7 @@ class ResponsePacket(object):
 
 
 def deserialize_packet(input_packet):
+    print(input_packet.decode())
     attributes = json.loads(input_packet.decode())
 
     output = None

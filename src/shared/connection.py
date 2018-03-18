@@ -4,7 +4,7 @@ from time import sleep
 ### Connection class. Static functions. ###
 
 def open_connection(accept_sock):
-	stream, client_address = accept_sock.accept()
+	stream, address = accept_sock.accept()
 	return stream
 
 

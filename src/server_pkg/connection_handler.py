@@ -1,4 +1,5 @@
 import socket
+import sys
 
 from shared import files
 from shared import packets
@@ -12,17 +13,9 @@ class ConnectionHandler(object):
 		self.directory = directory.Directory("server")
 		self.in_session = True
 
-		# self.commands = {
-		# 	"exit": exit,
-		# 	"lls": lls,
-		# 	"lcd": lcd,
-		# 	"lpwd": lpwd,
-		# 	"ls": ls,
-		# 	"cd": cd,
-		# 	"pwd": pwd,
-		# 	"upload": upload,
-		# 	"download": download
-		# }
+		self.file_obj = None
+		self.file_uid = None
+		self.client_id = None
 
 	def consume_packet(self, packet):
 		if packet._type == 'c':
@@ -30,9 +23,11 @@ class ConnectionHandler(object):
 			self.process_command(packet)
 			print("Processed command :", packet.data)
 		elif packet._type == 'm':
-			self.process_metadata(packet)
+			self.process_metadata(packet) # Save file information into object
 		elif packet._type == 'd':
-			self.process_data(packet)
+			self.download(packet)
+		elif packet._type == 'e':
+			self.process_end_of_data(packet)
 		else:
 			print("[ERROR] Packet type not detected. Packet dropped.")
 			print("[DEBUG] Packet data:", packet.data)
@@ -41,33 +36,63 @@ class ConnectionHandler(object):
 		# TODO: Finish these
 		packet_data_list = packet.data.split(' ')
 		if packet_data_list[0] == 'ls':
-			# TODO: send string to client
 			directory_files = self.directory.get_current_directory_files()
-			directory_files = ' '.join(directory_files)
+			directory_files = 'ls ' + ' '.join(directory_files)
 
 			packet = packets.ResponsePacket(directory_files)
 			self.outgoing_socket.sendall(packet.serialize())
 
+		elif packet_data_list[0] == 'cd':
+			print('[DEBUG] Changing directory to:', packet_data_list[1])
+			self.directory.set_current_directory(packet_data_list[1])
+
+			res = 'cd [REMOTE] CWD: ' + self.directory.get_current_directory()
+			packet = packets.ResponsePacket(res)
+			self.outgoing_socket.sendall(packet.serialize())
+		
+		elif packet_data_list[0] == 'pwd':
+			direc = self.directory.get_current_directory()
+
+			packet = packets.ResponsePacket('pwd [REMOTE] CWD: ' + direc)
+			self.outgoing_socket.sendall(packet.serialize())
+
 		elif packet_data_list[0] == 'download':
-			print("HERE IT IS:", packet_data_list)
 			self.upload(packet_data_list[1])
 
-	def process_metadata(self):
-		pass
+		elif packet_data_list[0] == 'upload':
+			ack_packet = packets.ResponsePacket('upload ACK')
+			self.outgoing_socket.sendall(ack_packet.serialize())
 
-	def process_data(self):
-		pass
+		elif packet_data_list[0] == 'exit':
+			ack_packet = packets.ResponsePacket('exit ACK')
+			self.outgoing_socket.sendall(ack_packet.serialize())
+			print("--- EXIT REVEICED ---")
+			sys.exit(0)
+
+	def process_metadata(self, packet):
+		file_path = self.directory.get_current_directory() + '/' + packet.file_name + '.' + packet.file_type
+		self.file_obj = files.Files(file_path, 'ab')
+		self.file_uid = packet.file_uid
+		self.client_id = packet.client_id
+
+	def process_end_of_data(self, packet):
+		self.file_obj.close()
+		self.file_obj = None
+		self.file_uid = None
+		self.client_id = None
+		ack_packet = packets.ResponsePacket('upload ACK')
+		self.outgoing_socket.sendall(ack_packet.serialize())
 
 	def upload(self, filename):
 		packet_size = 4096	# TODO: If we have time, avoid hard coding
 		file_uid = 1 # TODO: Set file_uid 
 		client_id = 1 # TODO: Set client_id
 
-		ack_packet = packets.ResponsePacket('ACK')
+		ack_packet = packets.ResponsePacket('download ACK')
 		self.outgoing_socket.sendall(ack_packet.serialize())
 
 		filepath = self.directory.get_current_directory() + '/' + filename
-		file = files.Files(filepath, packet_size - packets.DataPacket._overhead)
+		curr_file = files.Files(filepath, 'rb', packet_size - packets.DataPacket._overhead)
 
 		# TODO: Get rid of this and solve packets arriving at the same time
 		import time
@@ -82,7 +107,7 @@ class ConnectionHandler(object):
 		seq_num = 0
 		while True:
 			seq_num += 1
-			data = file.read_file_slice()
+			data = curr_file.read_file_slice()
 
 			if len(data) == 0:
 				# Create an 'end' packet to send
@@ -96,5 +121,11 @@ class ConnectionHandler(object):
 
 			# TODO: Get rid of this and solve packets arriving at the same time
 			time.sleep(1)
-
+		curr_file.close()
 		print("Successfully uploaded:", filename)
+
+	def download(self, packet):
+		# TODO: Incorporate file_uid
+		# TODO: Double check correct information
+
+		self.file_obj.write_file_by_append(packet.data)

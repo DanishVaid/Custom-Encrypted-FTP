@@ -1,9 +1,13 @@
 import json
 from time import sleep
 
+from Crypto.PublicKey import RSA
+
 from server_pkg import message_queue
 from server_pkg import connection_handler
 from shared import connection
+
+PRIVATE_KEY = None
 
 class Server(object):
 
@@ -33,9 +37,9 @@ class Server(object):
 	def make_connection(self):
 		# TODO: To be changed to allow for multi-client
 		incoming_socket = connection.create_accept_socket(self.server_IP, self.server_port)
-		sleep(5)
+		sleep(2)
 		self.outgoing_socket = connection.create_connect_socket(self.client_IP, self.client_port)
-		sleep(5)
+		sleep(2)
 		self.incoming_stream = connection.open_connection(incoming_socket)
 
 	# TODO: To be changed to allow for multi-client
@@ -51,6 +55,7 @@ class Server(object):
 		self.client_port = self.config['client_port']
 
 def init(config_file):
+	global PRIVATE_KEY
 	if config_file is None:
 		config_file = 'server_pkg/config.json'
 		
@@ -58,6 +63,10 @@ def init(config_file):
 		config = json.load(c_file)
 		
 	print("Starting server . . .")
+
+	with open(config['private_key_path'], 'rb') as f:
+		private_key_data = f.read()
+	PRIVATE_KEY = RSA.importKey(private_key_data)
 
 	server = Server(config)
 	server.run()

@@ -2,24 +2,23 @@
 
 class Files(object):
 
-	def __init__(self, filename, data_size):
+	def __init__(self, filename, usetype, data_size=None):
 		self.filename = filename
 		self.data_size = data_size
-
-		self.seek_point = 0
+		self.usetype = usetype
+		self.file_obj = open(filename, usetype)
 
 	def read_file_slice(self):
-		data = ""
-		# TODO: File object handles current read point
-		with open(self.filename, 'rb') as this_file:
-			this_file.seek(self.seek_point)
-			data = this_file.read(self.data_size)
-			self.seek_point += self.data_size
+		assert self.usetype == 'rb'
 
+		data = ""
+		data = self.file_obj.read(self.data_size)
 		return data
 
 	def write_file_by_append(self, data):
-		with open(self.filename, 'ab') as this_file:
-			this_file.write(data)
+		assert self.usetype == 'ab'
 
-	# TODO: Destructor
+		self.file_obj.write(data)
+
+	def close(self):
+		self.file_obj.close()
