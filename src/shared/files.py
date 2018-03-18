@@ -10,6 +10,7 @@ class Files(object):
 
 	def read_file_slice(self):
 		data = ""
+		# TODO: File object handles current read point
 		with open(self.filename, 'rb') as this_file:
 			this_file.seek(self.seek_point)
 			data = this_file.read(self.data_size)
@@ -20,3 +21,5 @@ class Files(object):
 	def write_file_by_append(self, data):
 		with open(self.filename, 'ab') as this_file:
 			this_file.write(data)
+
+	# TODO: Destructor
