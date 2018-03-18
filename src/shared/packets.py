@@ -19,22 +19,22 @@ class CommandPacket(object):
 
     def __init__(self, data):
         self.data = data
-        self.key = 'h' * 32
 
-    def serialize(self):
+    def serialize(self, enc_obj):
         res = {
             'type': self._type,
             'data': self.data or '',
-            'key' : str(self.key)
             }
-        return json.dumps(res).encode()
+        payload = json.dumps(res)
+        pad = '0' * (16 - (len(payload) % 16 ))
+        payload_to_enc = (pad + payload).encode()
+        return enc_obj.encrypt(payload_to_enc)
 
     def __repr__(self):
         res = "Packet is:\n\t"
         attrs = [
             'type = ' + self._type,
             'data = ' + str(self.data) or '',
-            'key = ' + str(self.key) or ''.zfill(32)
         ]
         res += '\n\t'.join(attrs)
         return res
@@ -55,7 +55,7 @@ class MetadataPacket(object):
         self.client_id = client_id
         # Added file_uid and seq_num data to _overhead
 
-    def serialize(self):
+    def serialize(self, enc_obj):
         res = {
             'type': self._type,
             'file_uid': str(self.file_uid).zfill(4) or '',
@@ -63,7 +63,10 @@ class MetadataPacket(object):
             'file_type': self.file_type or '',
             'client_id': self.client_id or ''
             }
-        return json.dumps(res).encode()
+        payload = json.dumps(res)
+        pad = '0' * (16 - (len(payload) % 16 ))
+        payload_to_enc = (pad + payload).encode()
+        return enc_obj.encrypt(payload_to_enc)
 
 
     def __repr__(self):
@@ -73,7 +76,7 @@ class MetadataPacket(object):
             'file_uid = ' + str(self.file_uid).zfill(4) or ''.zfill(4),
             'file_name = ' + self.file_name or '',
             'file_type = ' + self.file_type or '',
-            'client_id = ' + self.client_id or ''
+            'client_id = ' + str(self.client_id)or ''
         ]
         res += '\n\t'.join(attrs)
         return res
@@ -92,14 +95,17 @@ class DataPacket(object):
         self.data = data 
         # Added file_uid and seq_num data to _overhead
 
-    def serialize(self):
+    def serialize(self, enc_obj):
         res = {
             'type': self._type,
             'file_uid': str(self.file_uid).zfill(4) or ''.zfill(4),
             'seq_num': str(self.seq_num).zfill(4) or ''.zfill(4),
             'data': self.data.decode('utf8') or ''
             }
-        return json.dumps(res).encode()
+        payload = json.dumps(res)
+        pad = '0' * (16 - (len(payload) % 16 ))
+        payload_to_enc = (pad + payload).encode()
+        return enc_obj.encrypt(payload_to_enc)
 
     def __repr__(self):
         res = "Packet is:\n\t"
@@ -121,12 +127,15 @@ class EndOfDataPacket(object):
     def __init__(self, file_uid):
         self.file_uid = file_uid
 
-    def serialize(self):
+    def serialize(self, enc_obj):
         res = {
             'type': self._type,
             'file_uid': str(self.file_uid).zfill(4) or ''.zfill(4)
             }
-        return json.dumps(res).encode()
+        payload = json.dumps(res)
+        pad = '0' * (16 - (len(payload) % 16 ))
+        payload_to_enc = (pad + payload).encode()
+        return enc_obj.encrypt(payload_to_enc)
     
     def __repr__(self):
         res = "Packet is:\n\t"
@@ -145,12 +154,16 @@ class ResponsePacket(object):
     def __init__(self, data):
         self.data = data
 
-    def serialize(self):
+    def serialize(self, enc_obj):
         res = {
             'type': self._type,
             'data': self.data or ''
             }
-        return json.dumps(res).encode()
+        payload = json.dumps(res)
+        pad = '0' * (16 - (len(payload) % 16 ))
+        payload_to_enc = (pad + payload).encode()
+        print("LENGTH IS:", len(payload_to_enc))
+        return enc_obj.encrypt(payload_to_enc)
     
     def __repr__(self):
         res = "Packet is:\n\t"
@@ -180,13 +193,16 @@ class InitializerPacket(object):
             'sym_key': self.sym_key.decode('utf8'),
             'client_id': self.client_id or ''
             }
-        payload = json.dumps(res).encode()
+
+        print("RES DICT IS:", res)
+        # JSON Dump and pad it to 128
+        payload = json.dumps(res).zfill(128).encode()
 
         if public:
             pub_key_obj = get_server_public_key()
             return pub_key_obj.encrypt(payload, 32)[0] 
         else:
-            encryption = AES.new(self.sym_key, AES.MODE_CTR)
+            encryption = AES.new(self.sym_key, AES.MODE_ECB)
             return encryption.encrypt(payload)
     
     def __repr__(self):
@@ -194,7 +210,7 @@ class InitializerPacket(object):
         attrs = [
             'type = ' + self._type,
             'sym_key = ' + str(self.sym_key) or '',
-            'client_id = ' + self.client_id or ''
+            'client_id = ' + str(self.client_id) or ''
         ]
         res += '\n\t'.join(attrs)
         return res
@@ -203,22 +219,32 @@ class InitializerPacket(object):
 def deserialize_init_packet(init_packet, public=False, sym_key=None):
     from server_pkg.server import get_server_private_key
     decrypted_packet = None
+    # FIXME: Clean up print statements
+    print("ENCRYPTED PACKET IS:", init_packet)
     if public:
         private_key_obj = get_server_private_key()
         decrypted_packet = private_key_obj.decrypt(init_packet)
     else:
-        encryption = AES.new(sym_key, AES.MODE_CTR)
+        encryption = AES.new(sym_key, AES.MODE_ECB)
         decrypted_packet = encryption.decrypt(init_packet)
+    print("DECODED PACKET IS:", decrypted_packet.decode())
+    decrypted_packet_cleaned = decrypted_packet.decode().lstrip('0')
+    print("CLEANED UP PACKET IS:", decrypted_packet_cleaned)
 
-    attributes = json.loads(decrypted_packet.decode())
-    assert attributes['type'] == 'i', ("[ERROR] Excepted Initilizaton Packet, got: TYPE:{}".format(attributes['type']))
+    attributes = json.loads(decrypted_packet_cleaned)
+    assert attributes['type'] == 'i', ("[ERROR] Excepted Initilizaton Packet, got: TYPE - {}".format(attributes['type']))
 
     output = InitializerPacket(attributes['sym_key'].encode('utf8'), attributes['client_id'])
+    print("BUILT PACK IS:", output)
     return output
 
-def deserialize_packet(input_packet):
-    print(input_packet.decode())
-    attributes = json.loads(input_packet.decode())
+def deserialize_packet(input_packet, enc_obj):
+    print("ENCRYPT PACK IS:", input_packet)
+
+    payload = enc_obj.decrypt(input_packet).decode().lstrip('0')
+    attributes = json.loads(payload)
+
+    print("DECRYPT ATTR ARE:", attributes)
 
     output = None
     packet_type = attributes['type'] 

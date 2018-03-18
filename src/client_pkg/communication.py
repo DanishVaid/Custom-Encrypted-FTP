@@ -1,5 +1,8 @@
 import sys
 import socket
+import time
+
+from Crypto.Cipher import AES
 
 from shared import files
 from shared import packets
@@ -14,24 +17,24 @@ class Communication(object):
 		self.directory = directory.Directory("client")
 		self.in_session = True
 
-		self.key = None
+		self.enc_obj = None
 		self.client_id = None
 
 	def establish_secure_key(self):
 		init_pack = packets.InitializerPacket()
-		self.key = init_pack.sym_key
 		self.outgoing_socket.sendall(init_pack.serialize(True))
 		
 		while(True):
 			self.incoming_stream.settimeout(1)
 			try:
 				data = self.incoming_stream.recv(4096)
-				packet = packets.deserialize_init_packet(data, False, self.key)
+				packet = packets.deserialize_init_packet(data, False, init_pack.sym_key)
 
-				if packet.sym_key != self.key:
+				if packet.sym_key != init_pack.sym_key:
 					print("[ERROR] Failed to establish same key")
 					sys.exit(1)
 
+				self.enc_obj = AES.new(init_pack.sym_key, AES.MODE_ECB)
 				self.client_id = packet.client_id
 				return
 			except socket.timeout:
@@ -101,7 +104,7 @@ class Communication(object):
 
 	def exit(self):
 		packet = packets.CommandPacket("exit")
-		self.outgoing_socket.sendall(packet.serialize())
+		self.outgoing_socket.sendall(packet.serialize(self.enc_obj))
 		if not self.receive_ack('exit'):
 			print("[ERROR] Exit ACK not received")
 			sys.exit(1)
@@ -118,27 +121,28 @@ class Communication(object):
 
 	def ls(self):
 		packet = packets.CommandPacket("ls")
-		self.outgoing_socket.sendall(packet.serialize())
-		print("[REMOTE] Current directory files are:")
+		self.outgoing_socket.sendall(packet.serialize(self.enc_obj))
 
 	def cd(self, directory):
 		packet = packets.CommandPacket('cd ' + directory)
-		self.outgoing_socket.sendall(packet.serialize())
+		self.outgoing_socket.sendall(packet.serialize(self.enc_obj))
 
 	def pwd(self):
 		packet = packets.CommandPacket("pwd")
-		self.outgoing_socket.sendall(packet.serialize())
+		self.outgoing_socket.sendall(packet.serialize(self.enc_obj))
 
 	def upload(self, filename):
 		packet_size = 4096	# TODO: If we have time, avoid hard coding
-		file_uid = 1 # TODO: Set file_uid 
-		client_id = 1 # TODO: Set client_id
+		file_uid = 1 # FIXME: Set file_uid 
+		client_id = 1 # FIXME: Set client_id
 
 		filepath = self.directory.get_current_directory() + '/' + filename
 		curr_file = files.Files(filepath, 'rb', packet_size - packets.DataPacket._overhead)
 
+		time.sleep(0.001)
+
 		command_packet = packets.CommandPacket("upload")
-		self.outgoing_socket.sendall(command_packet.serialize())
+		self.outgoing_socket.sendall(command_packet.serialize(self.enc_obj))
 
 		# Receive and ensure its a correct 'ACK' (checking keys)
 		if not self.receive_ack('upload'):
@@ -147,7 +151,7 @@ class Communication(object):
 		# Build and send 'metadata' packet
 		filename = filename.split('.')
 		metadata_packet = packets.MetadataPacket(file_uid, filename[0], filename[1], client_id)
-		self.outgoing_socket.sendall(metadata_packet.serialize())
+		self.outgoing_socket.sendall(metadata_packet.serialize(self.enc_obj))
 		
 		curr_pack = None
 		seq_num = 0
@@ -158,21 +162,23 @@ class Communication(object):
 			if len(data) == 0:
 				# Create an 'end' packet to send
 				curr_pack = packets.EndOfDataPacket(file_uid)
-				self.outgoing_socket.sendall(curr_pack.serialize())
+				self.outgoing_socket.sendall(curr_pack.serialize(self.enc_obj))
 				print('End of data packet Sent')
 				self.receive_ack('upload')
 				return
 			else:
 				curr_pack = packets.DataPacket(file_uid, seq_num, data)
 
-			self.outgoing_socket.sendall(curr_pack.serialize())
+			self.outgoing_socket.sendall(curr_pack.serialize(self.enc_obj))
+
+			# Sleeps are in there to solve the issue of packets arriving at the same time
+			time.sleep(0.001)
 		curr_file.close()
 		print("Successfully uploaded:", filename)
 
 	def download(self, filename):
-		# TODO: Figure out protocol
 		packet = packets.CommandPacket("download " + filename)
-		self.outgoing_socket.sendall(packet.serialize())
+		self.outgoing_socket.sendall(packet.serialize(self.enc_obj))
 		if not self.receive_ack('download'):
 			return
 		self.receive_download()
@@ -190,8 +196,7 @@ class Communication(object):
 
 			try:
 				data = self.incoming_stream.recv(4096)
-				# TODO: Decrypt with sym key when we add encyrption
-				packet = packets.deserialize_packet(data)
+				packet = packets.deserialize_packet(data, self.enc_obj)
 
 				if packet._type != 'r':
 					print("[ERROR] Received following instead of a Response packet:\n\ttype = {}, data = {}".format(packet._type, packet.data))
@@ -211,8 +216,8 @@ class Communication(object):
 		print(content)
 		
 	def receive_download(self):
-		# TODO: Incorporate file_uid
-		# TODO: Double check correct information
+		# FIXME: Incorporate file_uid
+		# FIXME: Double check correct information
 		file_uid, file_name, file_type, client_id = self.receive_metadata()
 		new_file_path = self.directory.get_current_directory() + '/' + file_name + '.' + file_type
 		new_file = files.Files(new_file_path, 'ab')
@@ -222,8 +227,7 @@ class Communication(object):
 			try:
 				self.incoming_stream.settimeout(1)
 				data = self.incoming_stream.recv(4096)
-				# TODO: Decrypt with sym key when we add encryption
-				packet = packets.deserialize_packet(data)
+				packet = packets.deserialize_packet(data, self.enc_obj)
 				seq_num += 1
 
 				if packet._type == 'e':
@@ -248,8 +252,7 @@ class Communication(object):
 			try:
 				self.incoming_stream.settimeout(1)
 				data = self.incoming_stream.recv(4096)
-				# TODO: Decrypt with sym key when we add encryption
-				packet = packets.deserialize_packet(data)
+				packet = packets.deserialize_packet(data, self.enc_obj)
 
 				if packet._type != 'm':
 					print("[ERROR] Received following instead of metadata packet:\n\ttype = {}, data = {}".format(packet._type, packet.data))
@@ -266,8 +269,7 @@ class Communication(object):
 
 			try:
 				data = self.incoming_stream.recv(4096)
-				# TODO: Decrypt with sym key when we add encyrption
-				packet = packets.deserialize_packet(data)
+				packet = packets.deserialize_packet(data, self.enc_obj)
 
 				if packet._type != 'r' or packet.data != "{} ACK".format(func):
 					print("[ERROR] Received following instead of a correct ACK:\n\ttype = {}, data = {}".format(packet._type, packet.data))

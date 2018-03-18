@@ -15,8 +15,8 @@ class Directory(object):
 
 			possible_directories = []
 			for file in directory_files:
-				possible_directory = self.get_current_directory() + file
-				if os.path.isdir(possible_directory):	#TODO: This does not work, learn functionality or find alternative
+				possible_directory = self.get_current_directory() + '/' + file
+				if os.path.isdir(possible_directory):
 					possible_directories.append(file)
 
 			if directory in possible_directories:
@@ -45,7 +45,7 @@ class Directory(object):
 		shared_src_directory = os.getcwd()
 
 		prefixes = shared_src_directory.split('/')
-		prefixes = prefixes[1:-1]	# TODO: Test that cwd is src
+		prefixes = prefixes[1:-1]
 		prefixes.append(user_type + "_home")
 
 		return prefixes

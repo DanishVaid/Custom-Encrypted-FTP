@@ -1,5 +1,7 @@
 import socket
 
+from Crypto.Cipher import AES
+
 from shared.packets import InitializerPacket, deserialize_packet, deserialize_init_packet
 from . import connection_handler
 
@@ -21,15 +23,17 @@ class MessageQueue(object):
 			try:
 				data = self.incoming_stream.recv(4096)
 				print(data)
-				packet = deserialize_packet(data)
+				enc_obj = self.connection_handlers[0].enc_obj
+				packet = deserialize_packet(data, enc_obj)
 
 				# TODO: Current hardcoded for one connection.
 				self.connection_handlers[0].consume_packet(packet)
 
-				# TODO: Figure out how to safely close server.
-
 			except socket.timeout:
 				pass
+			except closeServer:
+				print("Closing server . . .")
+				return
 
 	def add_handler(self, connection_handler):
 		self.connection_handlers.append(connection_handler)
@@ -43,12 +47,17 @@ class MessageQueue(object):
 				packet = deserialize_init_packet(init_data, True)
 				print(packet)
 
-				client_id = len(self.connection_handlers)
-				conn_handler = connection_handler.ConnectionHandler(outgoing_socket, packet.sym_key, client_id)
+				client_id = len(self.connection_handlers) + 1
+				enc_obj = AES.new(packet.sym_key, AES.MODE_ECB)
+				conn_handler = connection_handler.ConnectionHandler(outgoing_socket, enc_obj, client_id)
 				self.add_handler(conn_handler)
 
-				ret_pack = InitializerPacket(conn_handler.key, conn_handler.client_id)
+				ret_pack = InitializerPacket(packet.sym_key, conn_handler.client_id)
+				print("RET_PACK IS:", ret_pack)
 				outgoing_socket.sendall(ret_pack.serialize(False))
 				return
 			except socket.timeout:
 				pass
+
+class closeServer(Exception):
+	pass
