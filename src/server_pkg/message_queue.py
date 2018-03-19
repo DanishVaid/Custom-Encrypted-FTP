@@ -5,6 +5,7 @@ from Crypto.Cipher import AES
 from shared.packets import InitializerPacket, deserialize_packet, deserialize_init_packet
 from . import connection_handler
 
+# Handles receiving data stream, packetization, and distributing to respective handler
 class MessageQueue(object):
 
 	def __init__(self, incoming_stream):
@@ -13,6 +14,7 @@ class MessageQueue(object):
 		self.message_queue = []
 		self.connection_handlers = []
 
+	# Always open to receive messages until end of session
 	def receive_messages(self):
 		print("Receiving Messages.")
 
@@ -25,7 +27,7 @@ class MessageQueue(object):
 				enc_obj = self.connection_handlers[0].enc_obj
 				packet = deserialize_packet(data, enc_obj)
 
-				# TODO: Current hardcoded for one connection.
+				# Send packet to connection handler
 				self.connection_handlers[0].consume_packet(packet)
 
 			except socket.timeout:
@@ -37,6 +39,7 @@ class MessageQueue(object):
 	def add_handler(self, connection_handler):
 		self.connection_handlers.append(connection_handler)
 
+	# Initial handshake process
 	def establish_secure_key(self, outgoing_socket):
 		while(True):
 			self.incoming_stream.settimeout(1)

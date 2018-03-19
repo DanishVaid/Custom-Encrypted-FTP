@@ -6,6 +6,7 @@ from shared import files
 from shared import packets
 from shared import directory
 
+# Only handles sending outgoing messages and updating state of connection
 class ConnectionHandler(object):
 
 	def __init__(self, outgoing_socket, enc_obj, client_id):
@@ -21,6 +22,7 @@ class ConnectionHandler(object):
 		self.client_id = client_id
 		self.file_uid = 0
 
+	# Read in packet, then directs it to correct functions
 	def consume_packet(self, packet):
 		if packet._type == 'c':
 			self.process_command(packet)
@@ -35,6 +37,7 @@ class ConnectionHandler(object):
 			print("[ERROR] Packet type not detected. Packet dropped.")
 			print("[DEBUG] Packet data:", packet.data)
 
+	# Received command packet, process dependent on type of command
 	def process_command(self, packet):
 		packet_data_list = packet.data.split(' ')
 		if packet_data_list[0] == 'ls':
@@ -72,12 +75,14 @@ class ConnectionHandler(object):
 			print("--- EXIT REVEICED ---")
 			raise closeServer()
 
+	# Set state of file being sent
 	def process_metadata(self, packet):
 		file_path = self.directory.get_current_directory() + '/' + packet.file_name + '.' + packet.file_type
 		self.file_obj = files.Files(file_path, 'ab')
 		self.file_uid = packet.file_uid
 		self.client_id = packet.client_id
 
+	# Identify end of file transfer, reset state
 	def process_end_of_data(self, packet):
 		self.file_obj.close()
 		self.file_obj = None
@@ -86,6 +91,7 @@ class ConnectionHandler(object):
 		ack_packet = packets.ResponsePacket('upload ACK')
 		self.outgoing_socket.sendall(ack_packet.serialize(self.enc_obj))
 
+	# Client requested to download a file, send over relevant infromation
 	def upload(self, filename):
 		packet_size = 4095
 		self.file_uid += 1
@@ -126,6 +132,7 @@ class ConnectionHandler(object):
 		curr_file.close()
 		print("Successfully uploaded:", filename)
 
+	# Client wanted to upload a file, accept relevant information
 	def download(self, packet):
 		if packet.file_uid != self.file_uid:
 			print("[ERROR] File uid is not matching. Exiting...")

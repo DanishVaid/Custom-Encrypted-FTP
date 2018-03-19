@@ -41,6 +41,7 @@ class Client(object):
 		connection.close_socket(self.outgoing_socket)
 
 	def configure(self):
+		# Load in values from config
 		self.client_IP = self.config['client_ip']
 		self.client_port = self.config['client_port']
 		self.server_IP = self.config['server_ip']
@@ -49,9 +50,11 @@ class Client(object):
 
 def init(config_file):
 	global SERVER_PUBLIC_KEY
+	# Read in configuration
 	if config_file is None:
 		config_file = 'client_pkg/config.json'
 
+	# Config file is JSON format
 	with open(config_file, 'r') as c_file:
 		config = json.load(c_file)
 

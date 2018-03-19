@@ -9,6 +9,7 @@ from shared import connection
 
 PRIVATE_KEY = None
 
+# Same general structure of client side
 class Server(object):
 
 	def __init__(self, config):
@@ -17,7 +18,6 @@ class Server(object):
 		self.server_IP = None
 		self.server_port = None
 
-		# TODO: Temporary, to be removed when we add multi-threading/client
 		self.client_IP = None
 		self.client_port = None
 
@@ -33,14 +33,12 @@ class Server(object):
 		self.close_connection()
 
 	def make_connection(self):
-		# TODO: To be changed to allow for multi-client
 		incoming_socket = connection.create_accept_socket(self.server_IP, self.server_port)
 		sleep(2)
 		self.outgoing_socket = connection.create_connect_socket(self.client_IP, self.client_port)
 		sleep(2)
 		self.incoming_stream = connection.open_connection(incoming_socket)
 
-	# TODO: To be changed to allow for multi-client
 	def close_connection(self):
 		connection.close_socket(self.outgoing_socket)
 
@@ -48,7 +46,6 @@ class Server(object):
 		self.server_IP = self.config['server_ip']
 		self.server_port = self.config['server_port']
 
-		# TODO: Temporary, to be removed when we add multi-threading/client
 		self.client_IP = self.config['client_ip']
 		self.client_port = self.config['client_port']
 

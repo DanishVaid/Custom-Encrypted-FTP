@@ -1,5 +1,5 @@
 
-
+# Object for keep state of accessing each file
 class Files(object):
 
 	def __init__(self, filename, usetype, data_size=None):

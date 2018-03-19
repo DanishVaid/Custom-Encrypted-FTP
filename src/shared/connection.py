@@ -7,11 +7,10 @@ def open_connection(accept_sock):
 	stream, address = accept_sock.accept()
 	return stream
 
-
 def close_socket(sock):
 	sock.close()
 
-
+# Create outgoing socket to allow for sending messages
 def create_connect_socket(IP, port):
 	port = int(port)
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -27,8 +26,8 @@ def create_connect_socket(IP, port):
 		create_connect_socket(IP, port)
 
 	return sock
-	
 
+# Create incoming socket to allow for receiving messages on the stream
 def create_accept_socket(IP, port):
 	port = int(port)
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

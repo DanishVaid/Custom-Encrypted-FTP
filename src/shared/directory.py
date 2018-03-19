@@ -1,7 +1,9 @@
 import os
 
+# Manages navigating through directory
 class Directory(object):
 
+	# Set virtual home directory, indicated by user type
 	def __init__(self, user_type):
 		self.home_directory_prefixes = self.get_home_directory_prefixes(user_type)
 		self.current_directory_prefixes = self.home_directory_prefixes

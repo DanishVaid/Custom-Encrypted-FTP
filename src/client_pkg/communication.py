@@ -11,16 +11,17 @@ from shared import directory
 class Communication(object):
 
 	def __init__(self, incoming_stream, outgoing_socket):
-		self.incoming_stream = incoming_stream
-		self.outgoing_socket = outgoing_socket
+		self.incoming_stream = incoming_stream		# Used to receive messages
+		self.outgoing_socket = outgoing_socket		# Used to send messages
 
-		self.directory = directory.Directory("client")
+		self.directory = directory.Directory("client")	# Used to navigate through files
 		self.in_session = True
 
-		self.enc_obj = None
+		self.enc_obj = None								# Used for encryption
 		self.client_id = None
 		self.file_uid = 0
 
+	# Handshake process to establish symmetric key and client ID
 	def establish_secure_key(self):
 		init_pack = packets.InitializerPacket()
 		self.outgoing_socket.sendall(init_pack.serialize(True))
@@ -41,6 +42,7 @@ class Communication(object):
 			except socket.timeout:
 				pass
 
+	# Start taking in commands from the user in the command line
 	def take_command(self):
 		commands = {
 			"exit": self.exit,
@@ -69,9 +71,11 @@ class Communication(object):
 			else:
 				print("Command not recognized.")
 
+			# Some commands expect responses from the server
 			if command in commands_need_response:
 				self.receive_messages()
 
+	# Grab user input from the command line
 	def take_input(self):
 		console_input = input("\nCommand (enter 'exit' to quit): ")
 		console_input = console_input.split()
@@ -88,6 +92,7 @@ class Communication(object):
 
 		return command, args
 
+	# Show user the list of possible commands
 	def list_commands(self):
 		print("Commands")
 		print("--------")
@@ -103,6 +108,7 @@ class Communication(object):
 		print("Upload File: upload <filename>")
 		print("Download File: download <filename>")
 
+	# Ends session on the client side and also tells server to close respective connection
 	def exit(self):
 		packet = packets.CommandPacket("exit")
 		self.outgoing_socket.sendall(packet.serialize(self.enc_obj))
@@ -111,39 +117,49 @@ class Communication(object):
 			sys.exit(1)
 		self.in_session = False
 
+	# 'ls' on local directory
 	def lls(self):
 		files = ' '.join(self.directory.get_current_directory_files())
 		print("[CLIENT] Current working directory files:\n", files)
 
+	# 'cd' on local directory
 	def lcd(self, directory):
 		cwd = self.directory.set_current_directory(directory)
 		print("[CLIENT] CWD now is:", cwd)
 
+	# 'pwd' on local directory
 	def lpwd(self):
 		cwd = self.directory.get_current_directory()
 		print("[CLIENT] CWD is:", cwd)
 
+	# 'ls' on remote directory
 	def ls(self):
 		packet = packets.CommandPacket("ls")
 		self.outgoing_socket.sendall(packet.serialize(self.enc_obj))
 
+	# 'cd' on remote directory
 	def cd(self, directory):
 		packet = packets.CommandPacket('cd ' + directory)
 		self.outgoing_socket.sendall(packet.serialize(self.enc_obj))
 
+	# 'pwd' on remote directory
 	def pwd(self):
 		packet = packets.CommandPacket("pwd")
 		self.outgoing_socket.sendall(packet.serialize(self.enc_obj))
 
+	# Upload specified file
 	def upload(self, filename):
 		packet_size = 4095
 		self.file_uid += 1
 
+		# Prepare filepath and object for sending data
 		filepath = self.directory.get_current_directory() + '/' + filename
 		curr_file = files.Files(filepath, 'rb', packet_size - packets.DataPacket._overhead)
 
+		# Simulate network delay
 		time.sleep(0.001)
 
+		# Tell server that the client wants to upload a file
 		command_packet = packets.CommandPacket("upload")
 		self.outgoing_socket.sendall(command_packet.serialize(self.enc_obj))
 
@@ -156,6 +172,7 @@ class Communication(object):
 		metadata_packet = packets.MetadataPacket(self.file_uid, filename[0], filename[1], self.client_id)
 		self.outgoing_socket.sendall(metadata_packet.serialize(self.enc_obj))
 		
+		# Start sending to the server the contents of the file in chunks
 		curr_pack = None
 		seq_num = 0
 		while True:
@@ -176,18 +193,21 @@ class Communication(object):
 			# print("LENGTH IS:", len(curr_pack.serialize(self.enc_obj)))
 			self.outgoing_socket.sendall(curr_pack.serialize(self.enc_obj))
 
-			# Sleeps are in there to solve the issue of packets arriving at the same time
+			# Simulate network delay
 			time.sleep(0.001)
 		curr_file.close()
 		print("Successfully uploaded:", filename)
 
+	# Download specified file
 	def download(self, filename):
+		# Tell server that the client wants to download a file
 		packet = packets.CommandPacket("download " + filename)
 		self.outgoing_socket.sendall(packet.serialize(self.enc_obj))
 		if not self.receive_ack('download'):
 			return
 		self.receive_download()
 
+	# Start receiving responses from the server sequentially
 	def receive_messages(self):
 		response_to_function = {
 			"ls": self.print_response,
@@ -214,13 +234,15 @@ class Communication(object):
 			except socket.timeout:
 				pass
 
-
+	# Print response to command from the server
 	def print_response(self, content):
 		# content = content.split('|')
 		content = ' '.join(content)
 		print(content)
-		
+	
+	# Start receiving file information
 	def receive_download(self):
+		# Set file metadata
 		file_uid, file_name, file_type, client_id = self.receive_metadata()
 
 		if self.client_id != client_id:
@@ -260,7 +282,7 @@ class Communication(object):
 			except socket.timeout:
 				pass
 
-
+	# Expect a metadata packet
 	def receive_metadata(self):
 		while(True):
 			try:
@@ -277,6 +299,7 @@ class Communication(object):
 			except socket.timeout:
 				pass
 
+	# Expect an ACK
 	def receive_ack(self, func):
 		while(True):
 			self.incoming_stream.settimeout(1)
