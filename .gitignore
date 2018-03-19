@@ -79,3 +79,4 @@ web/migrations/*
 .texpadtmp/*
 *.conf.json
 *.tex
+docs/*.png
