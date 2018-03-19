@@ -87,7 +87,7 @@ class ConnectionHandler(object):
 		self.outgoing_socket.sendall(ack_packet.serialize(self.enc_obj))
 
 	def upload(self, filename):
-		packet_size = 4096
+		packet_size = 4095
 		self.file_uid += 1
 
 		ack_packet = packets.ResponsePacket('download ACK')
@@ -118,6 +118,7 @@ class ConnectionHandler(object):
 			else:
 				curr_pack = packets.DataPacket(self.file_uid, seq_num, data)
 
+			# print("SENDING PACK", curr_pack)
 			self.outgoing_socket.sendall(curr_pack.serialize(self.enc_obj))
 
 			# Sleeps are in there to simulate network delay

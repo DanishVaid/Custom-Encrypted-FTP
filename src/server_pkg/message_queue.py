@@ -22,7 +22,6 @@ class MessageQueue(object):
 
 			try:
 				data = self.incoming_stream.recv(4096)
-				print(data)
 				enc_obj = self.connection_handlers[0].enc_obj
 				packet = deserialize_packet(data, enc_obj)
 

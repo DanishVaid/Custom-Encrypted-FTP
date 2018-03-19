@@ -136,7 +136,7 @@ class Communication(object):
 		self.outgoing_socket.sendall(packet.serialize(self.enc_obj))
 
 	def upload(self, filename):
-		packet_size = 4096
+		packet_size = 4095
 		self.file_uid += 1
 
 		filepath = self.directory.get_current_directory() + '/' + filename
@@ -172,6 +172,8 @@ class Communication(object):
 			else:
 				curr_pack = packets.DataPacket(self.file_uid, seq_num, data)
 
+			# print("SENDING:", curr_pack)
+			# print("LENGTH IS:", len(curr_pack.serialize(self.enc_obj)))
 			self.outgoing_socket.sendall(curr_pack.serialize(self.enc_obj))
 
 			# Sleeps are in there to solve the issue of packets arriving at the same time
@@ -230,13 +232,13 @@ class Communication(object):
 		new_file_path = self.directory.get_current_directory() + '/' + file_name + '.' + file_type
 		new_file = files.Files(new_file_path, 'ab')
 
+		seq_num = 0
 		while(True):
-			seq_num = 0
 			try:
-				seq_num += 1
 				self.incoming_stream.settimeout(1)
 				data = self.incoming_stream.recv(4096)
 				packet = packets.deserialize_packet(data, self.enc_obj)
+				seq_num += 1
 
 				if packet.file_uid != self.file_uid:
 					print("[ERROR] Packet dumped, incorrect file uid. Exiting...")
@@ -250,7 +252,7 @@ class Communication(object):
 					print("[ERROR] Received following instead of data/end packet:\n\ttype = {}, data = {}".format(packet._type, packet.data))
 					sys.exit(1)
 				elif seq_num != packet.seq_num:
-					print("[ERROR] Sequence Number does not match:\n\ttype = {}, data = {}".format(packet._type, packet.data))
+					print("[ERROR] Sequence Number does not match (Client at:", seq_num, ")\nPacket:", packet)
 					sys.exit(1)
 
 				new_file.write_file_by_append(packet.data)

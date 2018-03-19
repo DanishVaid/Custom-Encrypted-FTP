@@ -84,7 +84,7 @@ class MetadataPacket(object):
 
 class DataPacket(object):  
     _type = 'd' 
-    _overhead = 64          # Base overhead of packet with empty strings in variables
+    _overhead = 84          # Base overhead of packet with empty strings in variables
     file_uid = None
     seq_num = None
     data = None
@@ -113,7 +113,7 @@ class DataPacket(object):
             'type = ' + self._type,
             'file_uid = ' + str(self.file_uid).zfill(4) or '',
             'seq_num = ' + str(self.seq_num).zfill(4) or '',
-            'data = ' + self.data or ''
+            'data = ' + str(self.data) or ''
         ]
         res += '\n\t'.join(attrs)
         return res
@@ -162,7 +162,6 @@ class ResponsePacket(object):
         payload = json.dumps(res)
         pad = '0' * (16 - (len(payload) % 16 ))
         payload_to_enc = (pad + payload).encode()
-        print("LENGTH IS:", len(payload_to_enc))
         return enc_obj.encrypt(payload_to_enc)
     
     def __repr__(self):
@@ -242,9 +241,12 @@ def deserialize_packet(input_packet, enc_obj):
     print("ENCRYPT PACK IS:", input_packet)
 
     payload = enc_obj.decrypt(input_packet).decode().lstrip('0')
+
+    print("PAYLOAD IS:", payload)
+
     attributes = json.loads(payload)
 
-    print("DECRYPT ATTR ARE:", attributes)
+    print("ATTRS ARE:", attributes)
 
     output = None
     packet_type = attributes['type'] 
