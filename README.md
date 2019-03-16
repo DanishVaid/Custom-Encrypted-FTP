@@ -1,5 +1,5 @@
 
-# CS 176B Project: FTP Server/Client
+# Custom Encrypted FTP Server/Client (CS 176B Project)
 
 ----------
 
